@@ -4,6 +4,7 @@ import { useAuth } from "../contexts/AuthContext";
 import GoogleIcon from "../components/GoogleIcon";
 
 export default function Signup() {
+  const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
@@ -27,7 +28,7 @@ export default function Signup() {
     setLoading(true);
 
     try {
-      await signup(email, password);
+      await signup(email, password, name);
       navigate("/");
     } catch (err) {
       setError(getErrorMessage(err.code));
@@ -78,6 +79,25 @@ export default function Signup() {
         {error && <div className="error-message mb-4">{error}</div>}
 
         <form onSubmit={handleSubmit} className="space-y-4">
+          <div>
+            <label
+              htmlFor="name"
+              className="block text-sm font-medium text-[var(--color-text)] mb-1.5"
+            >
+              Full name
+            </label>
+            <input
+              id="name"
+              type="text"
+              className="input-field"
+              placeholder="John Doe"
+              value={name}
+              onChange={(e) => setName(e.target.value)}
+              required
+              autoComplete="name"
+            />
+          </div>
+
           <div>
             <label
               htmlFor="email"
