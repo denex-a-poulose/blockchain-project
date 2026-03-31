@@ -25,7 +25,7 @@ const LANGUAGES = [
 export default function CreateTenant() {
   const [formData, setFormData] = useState({
     name: "",
-    businessId: "",
+    id: "",
     description: "",
     currency: "USD",
     country: "",
@@ -33,12 +33,32 @@ export default function CreateTenant() {
   });
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
+  const [isIdEdited, setIsIdEdited] = useState(false);
   const { createTenant } = useTenant();
   const navigate = useNavigate();
 
   function handleChange(e) {
     const { name, value } = e.target;
-    setFormData((prev) => ({ ...prev, [name]: value }));
+
+    if (name === "name") {
+      setFormData((prev) => {
+        const newData = { ...prev, name: value };
+        if (!isIdEdited) {
+          newData.id = value
+            .toLowerCase()
+            .replace(/[^a-z0-9]+/g, "-") // replace spaces and non-alphanumeric with hyphens
+            .replace(/^-+|-+$/g, ""); // trim hyphens from the edges
+        }
+        return newData;
+      });
+    } else if (name === "id") {
+      setIsIdEdited(true);
+      // Ensure the id only gets alphanumeric and hyphens as the user types
+      const sanitized = value.replace(/[^a-zA-Z0-9-]/g, "");
+      setFormData((prev) => ({ ...prev, [name]: sanitized }));
+    } else {
+      setFormData((prev) => ({ ...prev, [name]: value }));
+    }
   }
 
   async function handleSubmit(e) {
@@ -48,8 +68,8 @@ export default function CreateTenant() {
     if (!formData.name.trim()) {
       return setError("Organization name is required.");
     }
-    if (!formData.businessId.trim()) {
-      return setError("Business ID is required.");
+    if (!formData.id.trim()) {
+      return setError("Organization ID is required.");
     }
 
     setLoading(true);
@@ -98,24 +118,29 @@ export default function CreateTenant() {
             />
           </div>
 
-          {/* Business ID */}
+          {/* Organization ID */}
           <div>
             <label
-              htmlFor="businessId"
+              htmlFor="id"
               className="block text-sm font-medium text-[var(--color-text)] mb-1.5"
             >
-              Business ID <span className="text-[var(--color-error)]">*</span>
+              Organization ID <span className="text-[var(--color-error)]">*</span>
             </label>
             <input
-              id="businessId"
-              name="businessId"
+              id="id"
+              name="id"
               type="text"
               className="input-field"
-              placeholder="e.g. ACME-001 or registration number"
-              value={formData.businessId}
+              placeholder="e.g. acme-corp"
+              value={formData.id}
               onChange={handleChange}
+              pattern="[a-zA-Z0-9-]+"
+              title="Only letters, numbers, and hyphens are allowed"
               required
             />
+            <p className="mt-1 text-xs text-[var(--color-text-muted)]">
+              This will be the unique identifier for your organization (only letters, numbers, and hyphens).
+            </p>
           </div>
 
           {/* Description */}

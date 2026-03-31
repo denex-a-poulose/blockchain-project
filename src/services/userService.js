@@ -8,9 +8,9 @@ import { db } from "../firebase";
 
 /**
  * @typedef {Object} UserProfile
+ * @property {string} id
  * @property {string} name
  * @property {string} email
- * @property {string|null} walletAddress
  * @property {import('firebase/firestore').Timestamp} createdAt
  */
 
@@ -26,7 +26,7 @@ import { db } from "../firebase";
 export async function createUserProfile(user, name) {
   if (!user) throw new Error("User is required to create a profile.");
 
-  const userRef = doc(db, "users", user.uid);
+  const userRef = doc(db, "tenant_users", user.uid);
   const userSnap = await getDoc(userRef);
 
   if (userSnap.exists()) {
@@ -35,9 +35,9 @@ export async function createUserProfile(user, name) {
 
   /** @type {UserProfile} */
   const profileData = {
+    id: user.uid,
     name: name || user.displayName || "",
     email: user.email || "",
-    walletAddress: null,
     createdAt: serverTimestamp(),
   };
 
@@ -54,23 +54,9 @@ export async function createUserProfile(user, name) {
 export async function getUserProfile(userId) {
   if (!userId) throw new Error("userId is required.");
 
-  const userRef = doc(db, "users", userId);
+  const userRef = doc(db, "tenant_users", userId);
   const userSnap = await getDoc(userRef);
 
   if (!userSnap.exists()) return null;
   return /** @type {UserProfile} */ (userSnap.data());
-}
-
-/**
- * Updates a user's wallet address.
- *
- * @param {string} userId - The user's UID
- * @param {string} walletAddress - The wallet address to set
- * @returns {Promise<void>}
- */
-export async function updateWalletAddress(userId, walletAddress) {
-  if (!userId) throw new Error("userId is required.");
-
-  const userRef = doc(db, "users", userId);
-  await setDoc(userRef, { walletAddress }, { merge: true });
 }

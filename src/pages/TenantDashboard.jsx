@@ -101,10 +101,10 @@ export default function TenantDashboard() {
         )}
 
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-          {currentTenant.businessId && (
+          {currentTenant.id && (
             <div className="bg-[var(--color-surface-alt)] rounded-lg px-3 py-2">
-              <p className="text-xs text-[var(--color-text-muted)] mb-0.5">Business ID</p>
-              <p className="text-sm font-medium text-[var(--color-text)]">{currentTenant.businessId}</p>
+              <p className="text-xs text-[var(--color-text-muted)] mb-0.5">Organization ID</p>
+              <p className="text-sm font-medium text-[var(--color-text)] truncate">{currentTenant.id}</p>
             </div>
           )}
           {currentTenant.currency && (

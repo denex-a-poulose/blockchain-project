@@ -1,6 +1,7 @@
 import {
   collection,
   addDoc,
+  setDoc,
   doc,
   getDoc,
   getDocs,
@@ -14,7 +15,6 @@ import { db, auth } from "../firebase";
  * @typedef {Object} Tenant
  * @property {string} id
  * @property {string} name
- * @property {string} businessId
  * @property {string} description
  * @property {string} currency
  * @property {string} country
@@ -25,8 +25,8 @@ import { db, auth } from "../firebase";
 
 /**
  * @typedef {Object} TenantInput
+ * @property {string} id
  * @property {string} name
- * @property {string} businessId
  * @property {string} [description]
  * @property {string} currency
  * @property {string} country
@@ -54,16 +54,27 @@ export async function createTenant(tenantData) {
   const user = auth.currentUser;
   if (!user) throw new Error("User must be authenticated to create a tenant.");
 
-  const { name, businessId, description, currency, country, language } = tenantData;
+  const { id, name, description, currency, country, language } = tenantData;
 
   if (!name || !name.trim()) throw new Error("Tenant name is required.");
-  if (!businessId || !businessId.trim()) throw new Error("Business ID is required.");
+  if (!id || !id.trim()) throw new Error("Organization ID is required.");
+  
+  const formattedId = id.trim();
+  if (!/^[a-zA-Z0-9-]+$/.test(formattedId)) {
+    throw new Error("Organization ID can only contain letters, numbers, and hyphens.");
+  }
 
   try {
+    const tenantDocRef = doc(db, "tenants", formattedId);
+    const tenantSnap = await getDoc(tenantDocRef);
+    if (tenantSnap.exists()) {
+      throw new Error("This organization ID is already taken. Please choose another one.");
+    }
+
     // Create tenant document
-    const tenantRef = await addDoc(collection(db, "tenants"), {
+    await setDoc(tenantDocRef, {
+      id: formattedId,
       name: name.trim(),
-      businessId: businessId.trim(),
       description: description?.trim() || "",
       currency: currency || "USD",
       country: country || "",
@@ -73,20 +84,21 @@ export async function createTenant(tenantData) {
     });
 
     // Create admin membership (avoid duplicates by checking first)
-    const existing = await checkMembership(user.uid, tenantRef.id);
+    const existing = await checkMembership(user.uid, formattedId);
     if (!existing) {
-      await addDoc(collection(db, "user_tenants"), {
+      const memberRef = doc(collection(db, "user_tenants"));
+      await setDoc(memberRef, {
+        id: memberRef.id,
         userId: user.uid,
-        tenantId: tenantRef.id,
+        tenantId: formattedId,
         role: "admin",
         joinedAt: serverTimestamp(),
       });
     }
 
     return {
-      id: tenantRef.id,
+      id: formattedId,
       name: name.trim(),
-      businessId: businessId.trim(),
       description: description?.trim() || "",
       currency,
       country,
@@ -95,6 +107,9 @@ export async function createTenant(tenantData) {
       createdAt: null,
     };
   } catch (error) {
+    if (error.message.includes("already taken") || error.message.includes("contain letters")) {
+      throw error;
+    }
     console.error("Failed to create tenant:", error);
     throw new Error("Failed to create tenant. Please try again.");
   }
@@ -167,7 +182,7 @@ export async function getTenantMembers(tenantId) {
     const members = await Promise.all(
       memberSnap.docs.map(async (memberDoc) => {
         const { userId, role, joinedAt } = memberDoc.data();
-        const userRef = doc(db, "users", userId);
+        const userRef = doc(db, "tenant_users", userId);
         const userSnap = await getDoc(userRef);
         const userData = userSnap.exists() ? userSnap.data() : {};
 
@@ -206,9 +221,9 @@ export async function inviteUserToTenant(tenantId, email, role = "member") {
   if (!email || !email.trim()) throw new Error("Email is required.");
 
   try {
-    // Check if user with this email exists in users collection
+    // Check if user with this email exists in tenant_users collection
     const usersQuery = query(
-      collection(db, "users"),
+      collection(db, "tenant_users"),
       where("email", "==", email.trim())
     );
     const usersSnap = await getDocs(usersQuery);
@@ -224,7 +239,9 @@ export async function inviteUserToTenant(tenantId, email, role = "member") {
         throw new Error("User is already a member of this tenant.");
       }
 
-      await addDoc(collection(db, "user_tenants"), {
+      const memberRef = doc(collection(db, "user_tenants"));
+      await setDoc(memberRef, {
+        id: memberRef.id,
         userId: targetUserId,
         tenantId,
         role,
@@ -312,7 +329,9 @@ export async function processPendingInvitations(user) {
       // Check if membership already exists
       const existing = await checkMembership(user.uid, tenantId);
       if (!existing) {
-        await addDoc(collection(db, "user_tenants"), {
+        const memberRef = doc(collection(db, "user_tenants"));
+        await setDoc(memberRef, {
+          id: memberRef.id,
           userId: user.uid,
           tenantId,
           role,
