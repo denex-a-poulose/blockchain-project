@@ -51,8 +51,12 @@ export function AuthProvider({ children }) {
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, async (user) => {
       if (user) {
-        // Ensure profile exists on every login
-        await createUserProfile(user);
+        try {
+          // Ensure profile exists on every login
+          await createUserProfile(user);
+        } catch (error) {
+          console.error("Failed to ensure user profile:", error);
+        }
       }
       setCurrentUser(user);
       setLoading(false);

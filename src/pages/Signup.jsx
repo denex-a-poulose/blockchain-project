@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { useAuth } from "../contexts/AuthContext";
 import GoogleIcon from "../components/GoogleIcon";
@@ -10,8 +10,16 @@ export default function Signup() {
   const [confirmPassword, setConfirmPassword] = useState("");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
-  const { signup, loginWithGoogle } = useAuth();
+  const { currentUser, signup, loginWithGoogle } = useAuth();
   const navigate = useNavigate();
+
+  // Watch for current user. Because onAuthStateChanged handles fetching profile 
+  // data off-thread, we must wait for it to populate before navigating.
+  useEffect(() => {
+    if (currentUser) {
+      navigate("/");
+    }
+  }, [currentUser, navigate]);
 
   async function handleSubmit(e) {
     e.preventDefault();
@@ -29,11 +37,11 @@ export default function Signup() {
 
     try {
       await signup(email, password, name);
-      navigate("/");
+      // Navigation is handled by the useEffect above
     } catch (err) {
       setError(getErrorMessage(err.code));
+      setLoading(false);
     }
-    setLoading(false);
   }
 
   async function handleGoogleSignIn() {
@@ -42,11 +50,11 @@ export default function Signup() {
 
     try {
       await loginWithGoogle();
-      navigate("/");
+      // Navigation is handled by the useEffect above
     } catch (err) {
       setError(getErrorMessage(err.code));
+      setLoading(false);
     }
-    setLoading(false);
   }
 
   function getErrorMessage(code) {

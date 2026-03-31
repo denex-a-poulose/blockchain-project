@@ -22,7 +22,19 @@ const LANGUAGES = [
   { code: "ko", label: "Korean" },
 ];
 
+const COUNTRIES = [
+  "United States", "Canada", "United Kingdom", "Australia", "India", "Germany", "France", "Japan", "Brazil", "China",
+  "South Africa", "Mexico", "Italy", "Spain", "Netherlands", "Switzerland", "Sweden", "Singapore", "New Zealand", "Ireland",
+  "Argentina", "Austria", "Belgium", "Chile", "Colombia", "Czech Republic", "Denmark", "Egypt", "Finland", "Greece",
+  "Hong Kong", "Hungary", "Indonesia", "Israel", "Malaysia", "Nigeria", "Norway", "Pakistan", "Peru", "Philippines",
+  "Poland", "Portugal", "Romania", "Saudi Arabia", "South Korea", "Taiwan", "Thailand", "Turkey", "United Arab Emirates", "Vietnam",
+  "Algeria", "Bangladesh", "Costa Rica", "Croatia", "Ecuador", "Estonia", "Iceland", "Kenya", "Latvia", "Lithuania",
+  "Luxembourg", "Morocco", "Oman", "Panama", "Qatar", "Slovakia", "Slovenia", "Sri Lanka", "Tunisia", "Ukraine",
+  "Uruguay", "Venezuela", "Bahrain", "Bolivia", "Bulgaria", "Cyprus", "Ghana", "Jordan", "Kuwait", "Lebanon"
+].sort();
+
 export default function CreateTenant() {
+  const [isCustomCountry, setIsCustomCountry] = useState(false);
   const [formData, setFormData] = useState({
     name: "",
     id: "",
@@ -194,15 +206,39 @@ export default function CreateTenant() {
               >
                 Country
               </label>
-              <input
+              <select
                 id="country"
-                name="country"
-                type="text"
                 className="input-field"
-                placeholder="e.g. India"
-                value={formData.country}
-                onChange={handleChange}
-              />
+                value={isCustomCountry ? "Other" : formData.country}
+                onChange={(e) => {
+                  if (e.target.value === "Other") {
+                    setIsCustomCountry(true);
+                    setFormData(prev => ({ ...prev, country: "" }));
+                  } else {
+                    setIsCustomCountry(false);
+                    setFormData(prev => ({ ...prev, country: e.target.value }));
+                  }
+                }}
+              >
+                <option value="">Select country...</option>
+                {COUNTRIES.map(c => (
+                  <option key={c} value={c}>{c}</option>
+                ))}
+                <option value="Other">Other...</option>
+              </select>
+
+              {isCustomCountry && (
+                <input
+                  type="text"
+                  name="country"
+                  autoFocus
+                  className="input-field mt-2 animate-in fade-in slide-in-from-top-1"
+                  placeholder="Type your country"
+                  value={formData.country}
+                  onChange={handleChange}
+                  required
+                />
+              )}
             </div>
           </div>
 
