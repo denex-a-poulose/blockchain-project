@@ -146,7 +146,7 @@ export default function CreateTenant() {
               placeholder="e.g. acme-corp"
               value={formData.id}
               onChange={handleChange}
-              pattern="[a-zA-Z0-9-]+"
+              pattern="[a-zA-Z0-9\-]+"
               title="Only letters, numbers, and hyphens are allowed"
               required
             />
