@@ -26,9 +26,13 @@ const userRoutes = require('./routes/users');
 app.use('/api/tenants', tenantRoutes);
 app.use('/api/users', userRoutes);
 
-// Basic health check endpoint
+// Basic health check endpoints
 app.get('/api/health', (req, res) => {
   res.status(200).json({ status: 'ok', timestamp: new Date() });
+});
+
+app.get('/', (req, res) => {
+  res.status(200).send('Server is awake');
 });
 
 const PORT = process.env.PORT || 5000;
