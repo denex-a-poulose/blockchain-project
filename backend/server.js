@@ -22,9 +22,11 @@ app.use(express.json());
 // Import Routes (we will create these next)
 const tenantRoutes = require('./routes/tenants');
 const userRoutes = require('./routes/users');
+const walletRoutes = require('./routes/wallets');
 
 app.use('/api/tenants', tenantRoutes);
 app.use('/api/users', userRoutes);
+app.use('/api/wallets', walletRoutes);
 
 // Basic health check endpoints
 app.get('/api/health', (req, res) => {

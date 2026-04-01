@@ -3,18 +3,25 @@ import { useTenant } from "../contexts/TenantContext";
 import { useNavigate } from "react-router-dom";
 import TenantSwitcher from "../components/TenantSwitcher";
 import TenantDashboard from "./TenantDashboard";
+import WalletManager from "../components/WalletManager";
 import Navbar from "../components/Navbar";
+import Sidebar from "../components/Sidebar";
+import { useState } from "react";
 
 export default function Landing() {
   const { currentUser, logout } = useAuth();
   const { tenants, currentTenant, loading } = useTenant();
   const navigate = useNavigate();
+  const [activeTab, setActiveTab] = useState("overview");
 
   return (
     <div className="min-h-screen flex flex-col bg-[var(--color-surface-alt)]">
       <Navbar />
-      {/* Main content */}
-      <main className="flex-1 py-8 px-4 w-full">
+      <div className="flex flex-1 overflow-hidden">
+        {currentTenant && tenants.length > 0 && (
+           <Sidebar activeTab={activeTab} setActiveTab={setActiveTab} />
+        )}
+        <main className="flex-1 overflow-y-auto py-8 px-4 w-full">
         {loading ? (
           <div className="flex items-center justify-center h-64">
             <p className="text-sm text-[var(--color-text-muted)]">Loading…</p>
@@ -56,10 +63,10 @@ export default function Landing() {
             </div>
           </div>
         ) : currentTenant ? (
-          /* Tenant dashboard */
-          <TenantDashboard />
+          activeTab === "overview" ? <TenantDashboard /> : <WalletManager />
         ) : null}
-      </main>
+        </main>
+      </div>
     </div>
   );
 }

@@ -7,12 +7,14 @@ import Signup from "./pages/Signup";
 import ForgotPassword from "./pages/ForgotPassword";
 import Landing from "./pages/Landing";
 import CreateTenant from "./pages/CreateTenant";
+import WagmiProviderSetup from "./components/WagmiProviderSetup";
 
 export default function App() {
   return (
-    <BrowserRouter>
-      <AuthProvider>
-        <TenantProvider>
+    <WagmiProviderSetup>
+      <BrowserRouter>
+        <AuthProvider>
+          <TenantProvider>
           <Routes>
             <Route path="/login" element={<Login />} />
             <Route path="/signup" element={<Signup />} />
@@ -35,8 +37,9 @@ export default function App() {
             />
             <Route path="*" element={<Navigate to="/" replace />} />
           </Routes>
-        </TenantProvider>
-      </AuthProvider>
-    </BrowserRouter>
+          </TenantProvider>
+        </AuthProvider>
+      </BrowserRouter>
+    </WagmiProviderSetup>
   );
 }
