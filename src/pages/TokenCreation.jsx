@@ -48,7 +48,7 @@ export default function TokenCreation() {
         totalSupply: form.totalSupply,
         description: form.description,
       });
-      setMessage({ type: "success", text: "Token definition saved for this organization." });
+      setMessage({ type: "success", text: "Token saved to your organization workspace." });
       setForm({
         name: "",
         symbol: "",
@@ -66,17 +66,52 @@ export default function TokenCreation() {
   if (!currentTenant) return null;
 
   return (
-    <div className="max-w-2xl mx-auto">
-      <div className="mb-6">
-        <h2 className="text-xl font-semibold text-[var(--color-text)]">Tokens</h2>
-        <p className="text-sm text-[var(--color-text-muted)] mt-1">
-          Create token definitions for this organization (metadata stored in your workspace; deploy on-chain separately).
-        </p>
-      </div>
+    <div className="max-w-6xl mx-auto w-full">
+      {/* Page header */}
+      <header className="mb-8 flex flex-col gap-6 sm:flex-row sm:items-end sm:justify-between">
+        <div className="max-w-2xl">
+          <p className="text-[11px] font-semibold uppercase tracking-[0.2em] text-[var(--color-primary)]">
+            {currentTenant.name}
+          </p>
+          <h1 className="mt-2 text-2xl sm:text-3xl font-bold tracking-tight text-[var(--color-text)]">
+            Token workspace
+          </h1>
+          <p className="mt-2 text-sm leading-relaxed text-[var(--color-text-muted)]">
+            Define token metadata for this organization. Records are stored in your workspace; deploy
+            contracts or bridges separately when you are ready.
+          </p>
+        </div>
+        <div className="flex flex-wrap items-center gap-3 shrink-0">
+          <div className="flex items-center gap-2 rounded-2xl border border-[var(--color-border)] bg-[var(--color-surface)] px-4 py-2.5 shadow-sm">
+            <span className="text-2xl font-bold tabular-nums text-[var(--color-text)]">
+              {tokens.length}
+            </span>
+            <span className="text-xs font-medium uppercase tracking-wider text-[var(--color-text-muted)]">
+              token{tokens.length === 1 ? "" : "s"}
+            </span>
+          </div>
+          <button
+            type="button"
+            onClick={() => loadTokens()}
+            disabled={loading}
+            className="inline-flex items-center gap-2 rounded-xl border border-[var(--color-border)] bg-[var(--color-surface-alt)] px-3 py-2.5 text-xs font-medium text-[var(--color-text-muted)] transition-colors hover:border-[var(--color-border-hover)] hover:text-[var(--color-text)] disabled:opacity-50"
+          >
+            <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+                d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"
+              />
+            </svg>
+            Refresh
+          </button>
+        </div>
+      </header>
 
       {message.text && (
         <div
-          className={`mb-6 px-4 py-3 rounded-xl text-sm font-medium ${
+          className={`mb-8 rounded-2xl px-4 py-3 text-sm font-medium ${
             message.type === "success" ? "success-banner" : "error-message"
           }`}
         >
@@ -84,109 +119,211 @@ export default function TokenCreation() {
         </div>
       )}
 
-      <div className="bg-[var(--color-surface)] border border-[var(--color-border)] rounded-2xl p-6 mb-6">
-        <h3 className="text-sm font-semibold text-[var(--color-text)] mb-4">Create token</h3>
-        <form onSubmit={handleSubmit} className="space-y-4">
-          <div>
-            <label className="block text-sm font-medium text-[var(--color-text)] mb-1.5">Name</label>
-            <input
-              className="input-field"
-              value={form.name}
-              onChange={(e) => setForm((f) => ({ ...f, name: e.target.value }))}
-              placeholder="e.g. Acme Reward Token"
-              required
-            />
-          </div>
-          <div className="grid grid-cols-2 gap-3">
-            <div>
-              <label className="block text-sm font-medium text-[var(--color-text)] mb-1.5">Symbol</label>
-              <input
-                className="input-field"
-                value={form.symbol}
-                onChange={(e) => setForm((f) => ({ ...f, symbol: e.target.value }))}
-                placeholder="e.g. ACM"
-                maxLength={12}
-                required
-              />
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-[var(--color-text)] mb-1.5">Decimals</label>
-              <input
-                type="number"
-                min={0}
-                max={30}
-                className="input-field"
-                value={form.decimals}
-                onChange={(e) => setForm((f) => ({ ...f, decimals: e.target.value }))}
-              />
-            </div>
-          </div>
-          <div>
-            <label className="block text-sm font-medium text-[var(--color-text)] mb-1.5">
-              Total supply (string)
-            </label>
-            <input
-              className="input-field"
-              value={form.totalSupply}
-              onChange={(e) => setForm((f) => ({ ...f, totalSupply: e.target.value }))}
-              placeholder="e.g. 1000000"
-            />
-          </div>
-          <div>
-            <label className="block text-sm font-medium text-[var(--color-text)] mb-1.5">Description</label>
-            <textarea
-              className="input-field"
-              rows={3}
-              value={form.description}
-              onChange={(e) => setForm((f) => ({ ...f, description: e.target.value }))}
-              placeholder="Optional notes"
-            />
-          </div>
-          <button type="submit" className="btn-primary" disabled={saving}>
-            {saving ? "Saving…" : "Save token"}
-          </button>
-        </form>
-      </div>
-
-      <div className="bg-[var(--color-surface)] border border-[var(--color-border)] rounded-2xl overflow-hidden">
-        <div className="px-6 py-4 border-b border-[var(--color-border)]">
-          <h3 className="text-sm font-semibold text-[var(--color-text)]">
-            Organization tokens ({tokens.length})
-          </h3>
-        </div>
-        {loading ? (
-          <div className="px-6 py-8 text-center text-sm text-[var(--color-text-muted)]">Loading…</div>
-        ) : tokens.length === 0 ? (
-          <div className="px-6 py-8 text-center text-sm text-[var(--color-text-muted)]">
-            No tokens yet. Create one above.
-          </div>
-        ) : (
-          <div>
-            {tokens.map((t) => (
-              <div
-                key={t.id || t.tokenId}
-                className="px-6 py-4 border-b border-[var(--color-border)] last:border-b-0 hover:bg-[var(--color-surface-alt)] transition-colors"
-              >
-                <div className="flex flex-col gap-1">
-                  <div className="flex flex-wrap items-baseline justify-between gap-2">
-                    <p className="text-sm font-semibold text-[var(--color-text)]">{t.name}</p>
-                    <span className="text-xs font-mono text-[var(--color-primary)]">{t.symbol}</span>
-                  </div>
-                  <p className="text-xs text-[var(--color-text-muted)]">
-                    Token ID: <span className="font-mono text-[var(--color-text)]">{t.tokenId}</span>
-                  </p>
-                  <p className="text-xs text-[var(--color-text-muted)]">
-                    Decimals {t.decimals}
-                    {t.totalSupply ? ` · Supply ${t.totalSupply}` : ""}
-                  </p>
-                  {t.description && (
-                    <p className="text-xs text-[var(--color-text-muted)] mt-1">{t.description}</p>
-                  )}
-                </div>
+      <div className="grid grid-cols-1 gap-8 xl:grid-cols-12 xl:gap-10">
+        {/* Create form — left / top */}
+        <div className="xl:col-span-5">
+          <div className="overflow-hidden rounded-2xl border border-[var(--color-border)] bg-[var(--color-surface)] shadow-[0_4px_24px_rgba(0,0,0,0.35)]">
+            <div className="h-1.5 bg-gradient-to-r from-[var(--color-primary)] via-violet-500/80 to-fuchsia-600/40" />
+            <div className="p-6 sm:p-7">
+              <div className="mb-6">
+                <h2 className="text-lg font-semibold text-[var(--color-text)]">Create token</h2>
+                <p className="mt-1 text-xs text-[var(--color-text-muted)]">
+                  Required fields are marked. Supply is stored as text for large numbers.
+                </p>
               </div>
-            ))}
+
+              <form onSubmit={handleSubmit} className="space-y-0">
+                <section className="space-y-4">
+                  <p className="text-[11px] font-semibold uppercase tracking-wider text-[var(--color-text-muted)]">
+                    Identity
+                  </p>
+                  <div>
+                    <label className="mb-1.5 block text-sm font-medium text-[var(--color-text)]">
+                      Display name
+                    </label>
+                    <input
+                      className="input-field"
+                      value={form.name}
+                      onChange={(e) => setForm((f) => ({ ...f, name: e.target.value }))}
+                      placeholder="e.g. Polo Reward Token"
+                      required
+                    />
+                  </div>
+                  <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                    <div>
+                      <label className="mb-1.5 block text-sm font-medium text-[var(--color-text)]">
+                        Symbol
+                      </label>
+                      <input
+                        className="input-field font-mono uppercase"
+                        value={form.symbol}
+                        onChange={(e) =>
+                          setForm((f) => ({ ...f, symbol: e.target.value.toUpperCase() }))
+                        }
+                        placeholder="PRT"
+                        maxLength={12}
+                        required
+                      />
+                    </div>
+                    <div>
+                      <label className="mb-1.5 block text-sm font-medium text-[var(--color-text)]">
+                        Decimals
+                      </label>
+                      <input
+                        type="number"
+                        min={0}
+                        max={30}
+                        className="input-field"
+                        value={form.decimals}
+                        onChange={(e) => setForm((f) => ({ ...f, decimals: e.target.value }))}
+                      />
+                    </div>
+                  </div>
+                </section>
+
+                <section className="mt-8 space-y-4 border-t border-[var(--color-border)] pt-8">
+                  <p className="text-[11px] font-semibold uppercase tracking-wider text-[var(--color-text-muted)]">
+                    Supply & notes
+                  </p>
+                  <div>
+                    <label className="mb-1.5 block text-sm font-medium text-[var(--color-text)]">
+                      Total supply
+                    </label>
+                    <input
+                      className="input-field font-mono text-sm"
+                      value={form.totalSupply}
+                      onChange={(e) => setForm((f) => ({ ...f, totalSupply: e.target.value }))}
+                      placeholder="10000000"
+                    />
+                  </div>
+                  <div>
+                    <label className="mb-1.5 block text-sm font-medium text-[var(--color-text)]">
+                      Description
+                    </label>
+                    <textarea
+                      className="input-field min-h-[88px] resize-y"
+                      rows={3}
+                      value={form.description}
+                      onChange={(e) => setForm((f) => ({ ...f, description: e.target.value }))}
+                      placeholder="Internal notes, allocation intent, or links…"
+                    />
+                  </div>
+                </section>
+
+                <div className="mt-8 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                  <p className="text-[11px] text-[var(--color-text-muted)]">
+                    Saved under organization <span className="font-mono text-[var(--color-text)]">{currentTenant.id}</span>
+                  </p>
+                  <button type="submit" className="btn-primary w-full sm:w-auto sm:min-w-[140px]" disabled={saving}>
+                    {saving ? "Saving…" : "Save token"}
+                  </button>
+                </div>
+              </form>
+            </div>
           </div>
-        )}
+        </div>
+
+        {/* Library — right / bottom */}
+        <div className="xl:col-span-7">
+          <div className="flex h-full min-h-[320px] flex-col rounded-2xl border border-[var(--color-border)] bg-[var(--color-surface)]/80 backdrop-blur-sm">
+            <div className="flex items-center justify-between border-b border-[var(--color-border)] px-5 py-4 sm:px-6">
+              <div>
+                <h2 className="text-base font-semibold text-[var(--color-text)]">Library</h2>
+                <p className="mt-0.5 text-xs text-[var(--color-text-muted)]">
+                  All definitions for this organization
+                </p>
+              </div>
+            </div>
+
+            <div className="flex-1 overflow-y-auto p-4 sm:p-6">
+              {loading ? (
+                <div className="grid gap-4 sm:grid-cols-2">
+                  {[1, 2, 3, 4].map((i) => (
+                    <div
+                      key={i}
+                      className="animate-pulse rounded-xl border border-[var(--color-border)] bg-[var(--color-surface-alt)] p-4"
+                    >
+                      <div className="h-10 w-10 rounded-full bg-[var(--color-border)]" />
+                      <div className="mt-3 h-4 w-3/4 rounded bg-[var(--color-border)]" />
+                      <div className="mt-2 h-3 w-1/2 rounded bg-[var(--color-border)]" />
+                    </div>
+                  ))}
+                </div>
+              ) : tokens.length === 0 ? (
+                <div className="flex min-h-[240px] flex-col items-center justify-center rounded-xl border border-dashed border-[var(--color-border)] bg-[var(--color-surface-alt)]/40 px-6 py-12 text-center">
+                  <div className="mb-4 flex h-14 w-14 items-center justify-center rounded-2xl border border-[var(--color-border)] bg-[var(--color-surface)]">
+                    <svg
+                      className="h-7 w-7 text-[var(--color-text-muted)]"
+                      fill="none"
+                      stroke="currentColor"
+                      viewBox="0 0 24 24"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={1.5}
+                        d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+                      />
+                    </svg>
+                  </div>
+                  <p className="text-sm font-medium text-[var(--color-text)]">No tokens yet</p>
+                  <p className="mt-1 max-w-xs text-xs text-[var(--color-text-muted)]">
+                    Use the form to add your first token definition. It will appear here as a card.
+                  </p>
+                </div>
+              ) : (
+                <ul className="grid gap-4 sm:grid-cols-2">
+                  {tokens.map((t) => (
+                    <li key={t.id || t.tokenId}>
+                      <article className="group flex h-full flex-col rounded-xl border border-[var(--color-border)] bg-[var(--color-surface-alt)] p-4 transition-all hover:border-[var(--color-border-hover)] hover:shadow-md">
+                        <div className="flex items-start gap-3">
+                          <div
+                            className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-gradient-to-br from-[var(--color-primary)]/25 to-violet-600/20 text-sm font-bold text-[var(--color-primary)] ring-1 ring-inset ring-[var(--color-primary)]/20"
+                            aria-hidden
+                          >
+                            {(t.symbol || "?").slice(0, 4)}
+                          </div>
+                          <div className="min-w-0 flex-1">
+                            <h3 className="truncate font-semibold text-[var(--color-text)]">{t.name}</h3>
+                            <p className="mt-0.5 font-mono text-xs text-[var(--color-primary)]">{t.symbol}</p>
+                          </div>
+                        </div>
+
+                        <dl className="mt-4 grid grid-cols-2 gap-2 text-xs">
+                          <div className="rounded-lg bg-[var(--color-surface)] px-2.5 py-2">
+                            <dt className="text-[var(--color-text-muted)]">Decimals</dt>
+                            <dd className="mt-0.5 font-mono font-medium text-[var(--color-text)]">{t.decimals}</dd>
+                          </div>
+                          <div className="rounded-lg bg-[var(--color-surface)] px-2.5 py-2">
+                            <dt className="text-[var(--color-text-muted)]">Supply</dt>
+                            <dd className="mt-0.5 truncate font-mono font-medium text-[var(--color-text)]">
+                              {t.totalSupply || "—"}
+                            </dd>
+                          </div>
+                        </dl>
+
+                        <div className="mt-3 border-t border-[var(--color-border)] pt-3">
+                          <p className="text-[10px] font-medium uppercase tracking-wider text-[var(--color-text-muted)]">
+                            Token ID
+                          </p>
+                          <p className="mt-1 break-all font-mono text-[11px] leading-snug text-[var(--color-text-muted)]">
+                            {t.tokenId}
+                          </p>
+                        </div>
+
+                        {t.description ? (
+                          <p className="mt-3 line-clamp-3 text-xs leading-relaxed text-[var(--color-text-muted)]">
+                            {t.description}
+                          </p>
+                        ) : null}
+                      </article>
+                    </li>
+                  ))}
+                </ul>
+              )}
+            </div>
+          </div>
+        </div>
       </div>
     </div>
   );
