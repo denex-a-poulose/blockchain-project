@@ -32,7 +32,7 @@ router.get('/:tenantId', verifyAuthToken, async (req, res) => {
       const data = doc.data();
       return {
         ...data,
-        id: doc.id,
+        id: data.id || doc.id,
         walletId: data.walletId || doc.id,
         name: data.name ?? 'Unnamed wallet',
       };
@@ -71,8 +71,10 @@ router.post('/:tenantId', verifyAuthToken, async (req, res) => {
     }
 
     const walletId = crypto.randomUUID();
+    const docRef = db.collection('tenant_wallets').doc();
 
     const walletData = {
+      id: docRef.id,
       walletId,
       name: trimmedName,
       userId: uid,
@@ -82,9 +84,9 @@ router.post('/:tenantId', verifyAuthToken, async (req, res) => {
       createdAt: admin.firestore.FieldValue.serverTimestamp()
     };
 
-    const docRef = await db.collection('tenant_wallets').add(walletData);
-    
-    res.status(201).json({ id: docRef.id, ...walletData });
+    await docRef.set(walletData);
+
+    res.status(201).json({ ...walletData });
   } catch (error) {
     console.error(error);
     res.status(500).json({ error: 'Internal Server Error' });
@@ -114,7 +116,12 @@ router.patch('/:tenantId/record/:recordId', verifyAuthToken, async (req, res) =>
 
     await ref.update({ name: name.trim().slice(0, 120) });
     const updated = await ref.get();
-    res.status(200).json({ id: updated.id, walletId: updated.data().walletId || updated.id, ...updated.data() });
+    const u = updated.data();
+    res.status(200).json({
+      ...u,
+      id: u.id || updated.id,
+      walletId: u.walletId || updated.id,
+    });
   } catch (error) {
     console.error(error);
     res.status(500).json({ error: 'Internal Server Error' });
@@ -191,8 +198,11 @@ router.post('/:tenantId/verify', verifyAuthToken, async (req, res) => {
     if (walletsSnap.empty) return res.status(404).json({ error: "Wallet record not found." });
 
     const batch = db.batch();
-    walletsSnap.docs.forEach(doc => {
-      batch.update(doc.ref, { status: 'active' });
+    walletsSnap.docs.forEach((doc) => {
+      const d = doc.data();
+      const upd = { status: 'active' };
+      if (!d.id) upd.id = doc.id;
+      batch.update(doc.ref, upd);
     });
 
     await batch.commit();

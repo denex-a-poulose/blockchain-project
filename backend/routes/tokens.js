@@ -29,7 +29,7 @@ router.get('/:tenantId', verifyAuthToken, async (req, res) => {
       const data = doc.data();
       return {
         ...data,
-        id: doc.id,
+        id: data.id || doc.id,
         tokenId: data.tokenId || doc.id,
       };
     });
@@ -70,7 +70,10 @@ router.post('/:tenantId', verifyAuthToken, async (req, res) => {
     }
 
     const tokenId = crypto.randomUUID();
+    const docRef = db.collection('tenant_tokens').doc();
+
     const payload = {
+      id: docRef.id,
       tokenId,
       tenantId,
       name: name.trim().slice(0, 120),
@@ -82,7 +85,7 @@ router.post('/:tenantId', verifyAuthToken, async (req, res) => {
       createdAt: admin.firestore.FieldValue.serverTimestamp(),
     };
 
-    const docRef = await db.collection('tenant_tokens').add(payload);
+    await docRef.set(payload);
     res.status(201).json({
       id: docRef.id,
       tokenId,
