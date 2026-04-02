@@ -19,14 +19,24 @@ const app = express();
 app.use(cors());
 app.use(express.json());
 
+// Quick deploy check: GET /api should list modules (use after redeploy to confirm tokens route is live)
+app.get('/api', (req, res) => {
+  res.status(200).json({
+    ok: true,
+    modules: ['tenants', 'users', 'wallets', 'tokens'],
+  });
+});
+
 // Import Routes (we will create these next)
 const tenantRoutes = require('./routes/tenants');
 const userRoutes = require('./routes/users');
 const walletRoutes = require('./routes/wallets');
+const tokenRoutes = require('./routes/tokens');
 
 app.use('/api/tenants', tenantRoutes);
 app.use('/api/users', userRoutes);
 app.use('/api/wallets', walletRoutes);
+app.use('/api/tokens', tokenRoutes);
 
 // Health checks — keep body tiny (cron/uptime monitors often cap response size ~8KB;
 // Render error HTML when cold/502 can exceed that and fail the job as "output too large").

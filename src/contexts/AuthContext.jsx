@@ -2,7 +2,8 @@ import { createContext, useContext, useEffect, useState } from "react";
 import {
   createUserWithEmailAndPassword,
   signInWithEmailAndPassword,
-  signInWithPopup,
+  getRedirectResult,
+  signInWithRedirect,
   signOut,
   onAuthStateChanged,
   sendPasswordResetEmail,
@@ -37,12 +38,9 @@ export function AuthProvider({ children }) {
     return signInWithEmailAndPassword(auth, email, password);
   }
 
-  async function loginWithGoogle() {
-    const result = await signInWithPopup(auth, googleProvider);
-    // Create profile if first time (createUserProfile skips if exists)
-    await createUserProfile(result.user);
-    await processPendingInvitations(result.user);
-    return result;
+  /** Full-page redirect — avoids Cross-Origin-Opener-Policy / popup issues with Google sign-in. */
+  function loginWithGoogle() {
+    return signInWithRedirect(auth, googleProvider);
   }
 
   function logout() {
@@ -54,19 +52,39 @@ export function AuthProvider({ children }) {
   }
 
   useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, async (user) => {
-      if (user) {
-        try {
-          // Ensure profile exists on every login
-          await createUserProfile(user);
-        } catch (error) {
-          console.error("Failed to ensure user profile:", error);
+    let unsubscribe = () => {};
+    let cancelled = false;
+
+    (async () => {
+      try {
+        const redirectResult = await getRedirectResult(auth);
+        if (cancelled) return;
+        if (redirectResult?.user) {
+          await createUserProfile(redirectResult.user);
+          await processPendingInvitations(redirectResult.user);
         }
+      } catch (e) {
+        console.error("Google redirect sign-in error:", e);
       }
-      setCurrentUser(user);
-      setLoading(false);
-    });
-    return unsubscribe;
+      if (cancelled) return;
+
+      unsubscribe = onAuthStateChanged(auth, async (user) => {
+        if (user) {
+          try {
+            await createUserProfile(user);
+          } catch (error) {
+            console.error("Failed to ensure user profile:", error);
+          }
+        }
+        setCurrentUser(user);
+        setLoading(false);
+      });
+    })();
+
+    return () => {
+      cancelled = true;
+      unsubscribe();
+    };
   }, []);
 
   const value = {

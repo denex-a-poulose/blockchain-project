@@ -11,7 +11,7 @@ async function parseResponseBody(res) {
     const isHtml = raw.trimStart().startsWith("<!DOCTYPE") || raw.trimStart().startsWith("<html");
     throw new Error(
       isHtml
-        ? "The API returned a web page instead of JSON (often a 404). Redeploy the backend so /api/wallets routes are included, or fix VITE_API_URL."
+        ? "The API returned a web page instead of JSON. Check VITE_API_URL and backend deployment."
         : `Invalid JSON from server: ${raw.slice(0, 160)}`
     );
   }
@@ -38,32 +38,13 @@ async function fetchWithAuth(endpoint, options = {}) {
   return data;
 }
 
-export async function getTenantWallets(tenantId) {
-  return await fetchWithAuth(`/wallets/${tenantId}`);
+export async function getTenantTokens(tenantId) {
+  return await fetchWithAuth(`/tokens/${tenantId}`);
 }
 
-export async function addWallet(tenantId, walletAddress, name) {
-  return await fetchWithAuth(`/wallets/${tenantId}`, {
+export async function createToken(tenantId, payload) {
+  return await fetchWithAuth(`/tokens/${tenantId}`, {
     method: "POST",
-    body: JSON.stringify({ walletAddress, name }),
-  });
-}
-
-export async function updateWalletName(tenantId, recordId, name) {
-  return await fetchWithAuth(`/wallets/${tenantId}/record/${recordId}`, {
-    method: "PATCH",
-    body: JSON.stringify({ name }),
-  });
-}
-
-export async function getNonce(tenantId, walletAddress) {
-  const data = await fetchWithAuth(`/wallets/${tenantId}/nonce/${walletAddress}`);
-  return data.nonce;
-}
-
-export async function verifyWallet(tenantId, walletAddress, signature) {
-  return await fetchWithAuth(`/wallets/${tenantId}/verify`, {
-    method: "POST",
-    body: JSON.stringify({ walletAddress, signature }),
+    body: JSON.stringify(payload),
   });
 }

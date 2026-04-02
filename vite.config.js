@@ -9,7 +9,7 @@ export default defineConfig({
       prefix: "data-ref",
       enabled: true,
       basePath: "src",
-      editor: "code", // 'cursor' | 'vscode' | 'webstorm'
+      editor: "cursor", // 'cursor' | 'vscode' | 'webstorm'
       include: [".tsx", ".jsx"],
       exclude: ["node_modules", "main.tsx"],
       attributes: ['id', 'name', 'path', 'line', 'file'],

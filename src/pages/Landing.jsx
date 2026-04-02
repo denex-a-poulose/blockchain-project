@@ -1,15 +1,14 @@
-import { useAuth } from "../contexts/AuthContext";
 import { useTenant } from "../contexts/TenantContext";
 import { useNavigate } from "react-router-dom";
 import TenantSwitcher from "../components/TenantSwitcher";
 import TenantDashboard from "./TenantDashboard";
 import WalletManager from "../components/WalletManager";
+import TokenCreation from "./TokenCreation";
 import Navbar from "../components/Navbar";
 import Sidebar from "../components/Sidebar";
 import { useState } from "react";
 
 export default function Landing() {
-  const { currentUser, logout } = useAuth();
   const { tenants, currentTenant, loading } = useTenant();
   const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState("overview");
@@ -63,7 +62,13 @@ export default function Landing() {
             </div>
           </div>
         ) : currentTenant ? (
-          activeTab === "overview" ? <TenantDashboard /> : <WalletManager />
+          activeTab === "overview" ? (
+            <TenantDashboard />
+          ) : activeTab === "wallets" ? (
+            <WalletManager />
+          ) : (
+            <TokenCreation />
+          )
         ) : null}
         </main>
       </div>

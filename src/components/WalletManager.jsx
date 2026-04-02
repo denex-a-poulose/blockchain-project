@@ -2,7 +2,13 @@ import { useState, useEffect } from "react";
 import { useAccount, useConnect, useDisconnect, useSignMessage } from "wagmi";
 import { injected } from "wagmi/connectors";
 import { useTenant } from "../contexts/TenantContext";
-import { getTenantWallets, addWallet, getNonce, verifyWallet } from "../services/walletService";
+import {
+  getTenantWallets,
+  addWallet,
+  getNonce,
+  verifyWallet,
+  updateWalletName,
+} from "../services/walletService";
 
 export default function WalletManager() {
   const { currentTenant } = useTenant();
@@ -14,6 +20,9 @@ export default function WalletManager() {
   const [wallets, setWallets] = useState([]);
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState({ type: "", text: "" });
+  const [walletLabel, setWalletLabel] = useState("");
+  const [editingId, setEditingId] = useState(null);
+  const [editNameDraft, setEditNameDraft] = useState("");
 
   useEffect(() => {
     if (currentTenant?.id) {
@@ -35,12 +44,25 @@ export default function WalletManager() {
   async function handleAddWallet() {
     if (!isConnected || !address) return;
     setMessage({ type: "", text: "" });
+    const label = walletLabel.trim() || "Unnamed wallet";
     try {
-      await addWallet(currentTenant.id, address);
+      await addWallet(currentTenant.id, address, label);
+      setWalletLabel("");
       setMessage({ type: "success", text: "Wallet added successfully. Please verify it to activate." });
       await loadWallets();
     } catch (err) {
       setMessage({ type: "error", text: err.message || "Failed to add wallet." });
+    }
+  }
+
+  async function handleSaveRename(recordId) {
+    setMessage({ type: "", text: "" });
+    try {
+      await updateWalletName(currentTenant.id, recordId, editNameDraft.trim() || "Unnamed wallet");
+      setEditingId(null);
+      await loadWallets();
+    } catch (err) {
+      setMessage({ type: "error", text: err.message || "Failed to update name." });
     }
   }
 
@@ -134,7 +156,20 @@ export default function WalletManager() {
             )}
           </div>
         ) : (
-          <div className="flex items-center justify-between bg-[var(--color-surface-alt)] p-4 rounded-xl border border-[var(--color-border)]">
+          <div className="space-y-4">
+            <div>
+              <label className="block text-xs font-medium text-[var(--color-text-muted)] mb-1.5">
+                Wallet name (saved in database)
+              </label>
+              <input
+                className="input-field"
+                value={walletLabel}
+                onChange={(e) => setWalletLabel(e.target.value)}
+                placeholder="e.g. Treasury, Hot wallet"
+                maxLength={120}
+              />
+            </div>
+            <div className="flex items-center justify-between bg-[var(--color-surface-alt)] p-4 rounded-xl border border-[var(--color-border)]">
             <div className="flex items-center gap-3">
               <div className="w-10 h-10 rounded-full bg-gradient-to-tr from-[#f6851b] to-[#f4a940] flex items-center justify-center p-2 shadow-sm">
                  {/* Fake Metamask Fox Icon Base */}
@@ -162,6 +197,7 @@ export default function WalletManager() {
               </button>
             </div>
           </div>
+          </div>
         )}
       </div>
 
@@ -188,13 +224,65 @@ export default function WalletManager() {
                 key={wallet.id || wallet.walletAddress}
                 className="px-6 py-4 flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-[var(--color-border)] last:border-b-0 hover:bg-[var(--color-surface-alt)] transition-colors"
               >
-                <div>
-                  <p className="text-sm font-semibold text-[var(--color-text)] font-mono">
-                    {wallet.walletAddress}
-                  </p>
-                  <p className="text-xs text-[var(--color-text-muted)] mt-1">
-                    Added: {wallet.createdAt ? new Date(wallet.createdAt._seconds ? wallet.createdAt._seconds * 1000 : wallet.createdAt).toLocaleDateString() : 'Just now'}
-                  </p>
+                <div className="min-w-0 flex-1">
+                  {editingId === wallet.id ? (
+                    <div className="flex flex-col sm:flex-row sm:items-center gap-2">
+                      <input
+                        className="input-field py-1.5 text-sm max-w-xs"
+                        value={editNameDraft}
+                        onChange={(e) => setEditNameDraft(e.target.value)}
+                        maxLength={120}
+                      />
+                      <div className="flex gap-2">
+                        <button
+                          type="button"
+                          onClick={() => handleSaveRename(wallet.id)}
+                          className="btn-primary py-1 px-3 text-xs w-auto"
+                        >
+                          Save
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => setEditingId(null)}
+                          className="py-1 px-3 text-xs border border-[var(--color-border)] rounded-lg text-[var(--color-text-muted)] hover:text-[var(--color-text)]"
+                        >
+                          Cancel
+                        </button>
+                      </div>
+                    </div>
+                  ) : (
+                    <>
+                      <p className="text-sm font-semibold text-[var(--color-text)]">
+                        {wallet.name || "Unnamed wallet"}
+                      </p>
+                      <p className="text-xs text-[var(--color-text-muted)] mt-0.5 font-mono break-all">
+                        ID: {wallet.walletId || wallet.id}
+                      </p>
+                      <p className="text-xs text-[var(--color-text-muted)] mt-0.5 font-mono break-all">
+                        {wallet.walletAddress}
+                      </p>
+                      <p className="text-xs text-[var(--color-text-muted)] mt-1">
+                        Added:{" "}
+                        {wallet.createdAt
+                          ? new Date(
+                              wallet.createdAt._seconds
+                                ? wallet.createdAt._seconds * 1000
+                                : wallet.createdAt
+                            ).toLocaleDateString()
+                          : "Just now"}
+                      </p>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setEditingId(wallet.id);
+                          setEditNameDraft(wallet.name || "");
+                        }}
+                        className="text-xs text-[var(--color-primary)] font-medium mt-2 hover:underline"
+                      >
+                        Rename
+                      </button>
+                    </>
+                  )}
                 </div>
 
                 <div className="flex items-center gap-3 self-end sm:self-auto">

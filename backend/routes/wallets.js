@@ -28,7 +28,15 @@ router.get('/:tenantId', verifyAuthToken, async (req, res) => {
       .where('tenantId', '==', tenantId)
       .get();
 
-    const wallets = walletsSnap.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+    const wallets = walletsSnap.docs.map((doc) => {
+      const data = doc.data();
+      return {
+        ...data,
+        id: doc.id,
+        walletId: data.walletId || doc.id,
+        name: data.name ?? 'Unnamed wallet',
+      };
+    });
     // Filter to wallets belonging to user or just show all organization wallets? The prompt says "contain ID of user, Id of tenant, public address"
     res.status(200).json(wallets);
   } catch (error) {
@@ -41,11 +49,13 @@ router.get('/:tenantId', verifyAuthToken, async (req, res) => {
 router.post('/:tenantId', verifyAuthToken, async (req, res) => {
   try {
     const { tenantId } = req.params;
-    const { walletAddress } = req.body;
+    const { walletAddress, name } = req.body;
     const uid = req.user.uid;
     const db = admin.firestore();
 
     if (!walletAddress) return res.status(400).json({ error: "Wallet address is required." });
+    const trimmedName =
+      typeof name === 'string' && name.trim() ? name.trim().slice(0, 120) : 'Unnamed wallet';
 
     const isMember = await checkMembership(db, uid, tenantId);
     if (!isMember) return res.status(403).json({ error: "Access denied." });
@@ -60,7 +70,11 @@ router.post('/:tenantId', verifyAuthToken, async (req, res) => {
       return res.status(400).json({ error: "This wallet is already registered in this organization." });
     }
 
+    const walletId = crypto.randomUUID();
+
     const walletData = {
+      walletId,
+      name: trimmedName,
       userId: uid,
       tenantId,
       walletAddress: walletAddress.toLowerCase(),
@@ -71,6 +85,36 @@ router.post('/:tenantId', verifyAuthToken, async (req, res) => {
     const docRef = await db.collection('tenant_wallets').add(walletData);
     
     res.status(201).json({ id: docRef.id, ...walletData });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ error: 'Internal Server Error' });
+  }
+});
+
+// RENAME / UPDATE WALLET LABEL (Firestore document id)
+router.patch('/:tenantId/record/:recordId', verifyAuthToken, async (req, res) => {
+  try {
+    const { tenantId, recordId } = req.params;
+    const { name } = req.body;
+    const uid = req.user.uid;
+    const db = admin.firestore();
+
+    if (typeof name !== 'string' || !name.trim()) {
+      return res.status(400).json({ error: "Name is required." });
+    }
+
+    const isMember = await checkMembership(db, uid, tenantId);
+    if (!isMember) return res.status(403).json({ error: "Access denied." });
+
+    const ref = db.collection('tenant_wallets').doc(recordId);
+    const snap = await ref.get();
+    if (!snap.exists) return res.status(404).json({ error: "Wallet not found." });
+    const data = snap.data();
+    if (data.tenantId !== tenantId) return res.status(403).json({ error: "Access denied." });
+
+    await ref.update({ name: name.trim().slice(0, 120) });
+    const updated = await ref.get();
+    res.status(200).json({ id: updated.id, walletId: updated.data().walletId || updated.id, ...updated.data() });
   } catch (error) {
     console.error(error);
     res.status(500).json({ error: 'Internal Server Error' });
