@@ -28,9 +28,13 @@ app.use('/api/tenants', tenantRoutes);
 app.use('/api/users', userRoutes);
 app.use('/api/wallets', walletRoutes);
 
-// Basic health check endpoints
+// Health checks — keep body tiny (cron/uptime monitors often cap response size ~8KB;
+// Render error HTML when cold/502 can exceed that and fail the job as "output too large").
+app.head('/api/health', (req, res) => {
+  res.status(200).end();
+});
 app.get('/api/health', (req, res) => {
-  res.status(200).json({ status: 'ok', timestamp: new Date() });
+  res.status(200).type('text/plain').send('ok');
 });
 
 app.get('/', (req, res) => {

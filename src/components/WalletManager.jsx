@@ -80,7 +80,7 @@ export default function WalletManager() {
       {message.text && (
         <div
           className={`mb-6 px-4 py-3 rounded-xl text-sm font-medium ${
-            message.type === "success" ? "bg-emerald-50 text-emerald-700" : "error-message"
+            message.type === "success" ? "success-banner" : "error-message"
           }`}
         >
           {message.text}
@@ -111,11 +111,11 @@ export default function WalletManager() {
               </p>
             )}
             {connectError && (
-              <div className="mt-2 bg-red-50 p-3 rounded-xl border border-red-100">
+              <div className="mt-2 p-3 rounded-xl border border-[var(--color-danger-border)] bg-[var(--color-danger-surface)]">
                 <p className="text-sm font-semibold text-[var(--color-error)] mb-1">
                   Connection Failed
                 </p>
-                <p className="text-sm text-[var(--color-error)]/80 break-words">
+                <p className="text-sm text-[var(--color-error)]/90 break-words">
                   {connectError.name === 'ProviderNotFoundError' || connectError.message.includes('Provider not found') 
                     ? "We couldn't detect MetaMask in your browser. If you don't have it installed, please install the official extension to continue." 
                     : connectError.shortMessage || connectError.message}
@@ -201,8 +201,8 @@ export default function WalletManager() {
                   <span
                     className={`text-xs font-bold uppercase tracking-wider px-2.5 py-1 rounded-md border ${
                       wallet.status === "active"
-                        ? "bg-emerald-50 text-emerald-700 border-emerald-200"
-                        : "bg-amber-50 text-amber-700 border-amber-200"
+                        ? "bg-[var(--color-success-bg)] text-[var(--color-success-text)] border-[var(--color-success-border)]"
+                        : "bg-[var(--color-warning-bg)] text-[var(--color-warning-text)] border-[var(--color-warning-border)]"
                     }`}
                   >
                     {wallet.status}

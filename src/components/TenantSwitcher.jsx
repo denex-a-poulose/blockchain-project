@@ -25,7 +25,7 @@ export default function TenantSwitcher() {
     <div className="relative" ref={dropdownRef}>
       <button
         onClick={() => setIsOpen(!isOpen)}
-        className="flex items-center gap-2 px-3 py-1.5 text-sm font-medium text-[var(--color-text)] bg-[var(--color-surface-alt)] border border-[var(--color-border)] rounded-lg hover:border-[#cbd5e1] transition-colors cursor-pointer"
+        className="flex items-center gap-2 px-3 py-1.5 text-sm font-medium text-[var(--color-text)] bg-[var(--color-surface-alt)] border border-[var(--color-border)] rounded-lg hover:border-[var(--color-border-hover)] transition-colors cursor-pointer"
       >
         <span className="w-5 h-5 bg-[var(--color-primary)] rounded flex items-center justify-center text-white text-xs font-semibold">
           {currentTenant?.name?.charAt(0)?.toUpperCase() || "?"}

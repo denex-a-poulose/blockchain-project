@@ -49,9 +49,7 @@ export default function ForgotPassword() {
 
         {error && <div className="error-message mb-4">{error}</div>}
         {message && (
-          <div className="mb-4 rounded-lg bg-green-500/10 p-3 text-sm text-green-600 border border-green-500/20">
-            {message}
-          </div>
+          <div className="success-banner mb-4">{message}</div>
         )}
 
         <form onSubmit={handleSubmit} className="space-y-4">

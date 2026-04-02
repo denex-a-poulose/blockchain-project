@@ -132,9 +132,7 @@ export default function TenantDashboard() {
       {message.text && (
         <div
           className={`mb-4 px-4 py-3 rounded-xl text-sm font-medium ${
-            message.type === "success"
-              ? "bg-emerald-50 text-emerald-700"
-              : "error-message"
+            message.type === "success" ? "success-banner" : "error-message"
           }`}
         >
           {message.text}

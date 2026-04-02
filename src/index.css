@@ -1,15 +1,24 @@
 @import "tailwindcss";
 
 @theme {
-  --color-primary: #6366f1;
-  --color-primary-hover: #4f46e5;
-  --color-surface: #ffffff;
-  --color-surface-alt: #f8fafc;
-  --color-border: #e2e8f0;
-  --color-text: #0f172a;
-  --color-text-muted: #64748b;
-  --color-error: #ef4444;
-  --color-error-bg: #fef2f2;
+  --color-primary: #818cf8;
+  --color-primary-hover: #6366f1;
+  --color-surface: #151922;
+  --color-surface-alt: #0c0e13;
+  --color-border: #2a3142;
+  --color-border-hover: #3d4759;
+  --color-text: #e8edf5;
+  --color-text-muted: #8b97ab;
+  --color-error: #f87171;
+  --color-error-bg: rgba(248, 113, 113, 0.12);
+  --color-success-bg: rgba(52, 211, 153, 0.12);
+  --color-success-text: #34d399;
+  --color-success-border: rgba(52, 211, 153, 0.28);
+  --color-warning-bg: rgba(251, 191, 36, 0.1);
+  --color-warning-text: #fbbf24;
+  --color-warning-border: rgba(251, 191, 36, 0.28);
+  --color-danger-surface: rgba(248, 113, 113, 0.1);
+  --color-danger-border: rgba(248, 113, 113, 0.35);
   --font-sans: 'Inter', system-ui, -apple-system, sans-serif;
 }
 
@@ -18,6 +27,10 @@
     box-sizing: border-box;
     margin: 0;
     padding: 0;
+  }
+
+  html {
+    color-scheme: dark;
   }
 
   body {
@@ -37,7 +50,9 @@
     padding: 2.5rem;
     width: 100%;
     max-width: 420px;
-    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04), 0 6px 24px rgba(0, 0, 0, 0.03);
+    box-shadow:
+      0 1px 2px rgba(0, 0, 0, 0.45),
+      0 8px 32px rgba(0, 0, 0, 0.4);
   }
 
   .input-field {
@@ -59,7 +74,7 @@
 
   .input-field:focus {
     border-color: var(--color-primary);
-    box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.1);
+    box-shadow: 0 0 0 3px rgba(129, 140, 248, 0.22);
   }
 
   .btn-primary {
@@ -109,7 +124,7 @@
 
   .btn-google:hover:not(:disabled) {
     background: var(--color-surface-alt);
-    border-color: #cbd5e1;
+    border-color: var(--color-border-hover);
   }
 
   .btn-google:active:not(:disabled) {
@@ -140,6 +155,17 @@
   .error-message {
     background: var(--color-error-bg);
     color: var(--color-error);
+    padding: 0.75rem 1rem;
+    border-radius: 10px;
+    font-size: 0.875rem;
+    font-weight: 500;
+    border: 1px solid rgba(248, 113, 113, 0.25);
+  }
+
+  .success-banner {
+    background: var(--color-success-bg);
+    color: var(--color-success-text);
+    border: 1px solid var(--color-success-border);
     padding: 0.75rem 1rem;
     border-radius: 10px;
     font-size: 0.875rem;

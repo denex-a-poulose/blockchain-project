@@ -31,7 +31,7 @@ export default function Navbar() {
   const initial = currentUser?.email?.charAt(0).toUpperCase() || "U";
 
   return (
-    <header className="sticky top-0 z-40 w-full backdrop-blur-xl bg-white/70 border-b border-[var(--color-border)] shadow-[0_1px_3px_0_rgba(0,0,0,0.02)] transition-all duration-300">
+    <header className="sticky top-0 z-40 w-full backdrop-blur-xl bg-[var(--color-surface)]/90 border-b border-[var(--color-border)] shadow-[0_1px_3px_0_rgba(0,0,0,0.35)] transition-all duration-300">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 h-[72px] flex items-center justify-between">
 
         {/* Left Side: Branding & Switcher */}
@@ -63,13 +63,13 @@ export default function Navbar() {
                 Organization Member
               </span>
             </div>
-            <div className="w-9 h-9 rounded-full bg-gradient-to-tr from-gray-100 to-gray-200 border border-[var(--color-border)] shadow-sm flex items-center justify-center text-[var(--color-text)] font-semibold text-sm hover:ring-2 hover:ring-[var(--color-primary)] hover:ring-offset-2 transition-all">
+            <div className="w-9 h-9 rounded-full bg-gradient-to-tr from-zinc-600 to-zinc-700 border border-[var(--color-border)] shadow-sm flex items-center justify-center text-white font-semibold text-sm hover:ring-2 hover:ring-[var(--color-primary)] hover:ring-offset-2 hover:ring-offset-[var(--color-surface-alt)] transition-all">
               {initial}
             </div>
           </button>
 
           {profileOpen && (
-            <div className="absolute right-0 mt-3 w-64 bg-white border border-[var(--color-border)] rounded-2xl shadow-2xl overflow-hidden z-50">
+            <div className="absolute right-0 mt-3 w-64 bg-[var(--color-surface)] border border-[var(--color-border)] rounded-2xl shadow-2xl overflow-hidden z-50">
               <div className="px-4 py-3 border-b border-[var(--color-border)] bg-[var(--color-surface-alt)]/50">
                 <p className="text-sm font-semibold text-[var(--color-text)] truncate">{currentUser?.name || "User"}</p>
                 <p className="text-xs text-[var(--color-text-muted)] truncate mt-0.5">{currentUser?.email}</p>
