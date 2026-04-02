@@ -2,6 +2,21 @@ import { auth } from "../firebase";
 
 const API_URL = import.meta.env.VITE_API_URL || "http://localhost:5000/api";
 
+async function parseResponseBody(res) {
+  const raw = await res.text();
+  if (!raw) return {};
+  try {
+    return JSON.parse(raw);
+  } catch {
+    const isHtml = raw.trimStart().startsWith("<!DOCTYPE") || raw.trimStart().startsWith("<html");
+    throw new Error(
+      isHtml
+        ? "The API returned a web page instead of JSON (often a 404). Redeploy the backend so /api/wallets routes are included, or fix VITE_API_URL."
+        : `Invalid JSON from server: ${raw.slice(0, 160)}`
+    );
+  }
+}
+
 async function fetchWithAuth(endpoint, options = {}) {
   const user = auth.currentUser;
   if (!user) throw new Error("User must be authenticated.");
@@ -14,7 +29,7 @@ async function fetchWithAuth(endpoint, options = {}) {
   };
 
   const res = await fetch(`${API_URL}${endpoint}`, { ...options, headers });
-  const data = await res.json();
+  const data = await parseResponseBody(res);
 
   if (!res.ok) {
     throw new Error(data.error || "API request failed");
