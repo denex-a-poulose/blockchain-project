@@ -29,8 +29,7 @@ router.get('/:tenantId', verifyAuthToken, async (req, res) => {
       const data = doc.data();
       return {
         ...data,
-        id: data.id || doc.id,
-        tokenId: data.tokenId || doc.id,
+        id: doc.id,
       };
     });
 
@@ -69,12 +68,10 @@ router.post('/:tenantId', verifyAuthToken, async (req, res) => {
       return res.status(400).json({ error: 'Decimals must be an integer between 0 and 30.' });
     }
 
-    const tokenId = crypto.randomUUID();
     const docRef = db.collection('tenant_tokens').doc();
 
     const payload = {
       id: docRef.id,
-      tokenId,
       tenantId,
       name: name.trim().slice(0, 120),
       symbol: symbol.trim().toUpperCase().slice(0, 12),
@@ -88,7 +85,6 @@ router.post('/:tenantId', verifyAuthToken, async (req, res) => {
     await docRef.set(payload);
     res.status(201).json({
       id: docRef.id,
-      tokenId,
       tenantId,
       name: payload.name,
       symbol: payload.symbol,

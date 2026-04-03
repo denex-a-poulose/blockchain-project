@@ -32,8 +32,7 @@ router.get('/:tenantId', verifyAuthToken, async (req, res) => {
       const data = doc.data();
       return {
         ...data,
-        id: data.id || doc.id,
-        walletId: data.walletId || doc.id,
+        id: doc.id,
         name: data.name ?? 'Unnamed wallet',
       };
     });
@@ -70,12 +69,10 @@ router.post('/:tenantId', verifyAuthToken, async (req, res) => {
       return res.status(400).json({ error: "This wallet is already registered in this organization." });
     }
 
-    const walletId = crypto.randomUUID();
     const docRef = db.collection('tenant_wallets').doc();
 
     const walletData = {
       id: docRef.id,
-      walletId,
       name: trimmedName,
       userId: uid,
       tenantId,
@@ -119,8 +116,7 @@ router.patch('/:tenantId/record/:recordId', verifyAuthToken, async (req, res) =>
     const u = updated.data();
     res.status(200).json({
       ...u,
-      id: u.id || updated.id,
-      walletId: u.walletId || updated.id,
+      id: updated.id,
     });
   } catch (error) {
     console.error(error);

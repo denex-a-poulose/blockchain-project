@@ -221,7 +221,7 @@ export default function WalletManager() {
           <div>
             {wallets.map((wallet) => (
               <div
-                key={wallet.id || wallet.walletAddress}
+                key={wallet.id}
                 className="px-6 py-4 flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-[var(--color-border)] last:border-b-0 hover:bg-[var(--color-surface-alt)] transition-colors"
               >
                 <div className="min-w-0 flex-1">
@@ -256,7 +256,7 @@ export default function WalletManager() {
                         {wallet.name || "Unnamed wallet"}
                       </p>
                       <p className="text-xs text-[var(--color-text-muted)] mt-0.5 font-mono break-all">
-                        ID: {wallet.walletId || wallet.id}
+                        ID: {wallet.id}
                       </p>
                       <p className="text-xs text-[var(--color-text-muted)] mt-0.5 font-mono break-all">
                         {wallet.walletAddress}

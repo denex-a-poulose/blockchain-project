@@ -274,7 +274,7 @@ export default function TokenCreation() {
               ) : (
                 <ul className="grid gap-4 sm:grid-cols-2">
                   {tokens.map((t) => (
-                    <li key={t.id || t.tokenId}>
+                    <li key={t.id}>
                       <article className="group flex h-full flex-col rounded-xl border border-[var(--color-border)] bg-[var(--color-surface-alt)] p-4 transition-all hover:border-[var(--color-border-hover)] hover:shadow-md">
                         <div className="flex items-start gap-3">
                           <div
@@ -307,7 +307,7 @@ export default function TokenCreation() {
                             Token ID
                           </p>
                           <p className="mt-1 break-all font-mono text-[11px] leading-snug text-[var(--color-text-muted)]">
-                            {t.tokenId}
+                            {t.id}
                           </p>
                         </div>
 
