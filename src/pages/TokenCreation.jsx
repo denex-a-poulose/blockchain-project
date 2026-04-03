@@ -1,9 +1,11 @@
 import { useState, useEffect } from "react";
+import { useAccount } from "wagmi";
 import { useTenant } from "../contexts/TenantContext";
 import { getTenantTokens, createToken } from "../services/tokenService";
 import { getTenantWallets } from "../services/walletService";
 
 export default function TokenCreation() {
+  const { address, isConnected } = useAccount();
   const { currentTenant } = useTenant();
   const [tokens, setTokens] = useState([]);
   const [loading, setLoading] = useState(false);
@@ -17,8 +19,11 @@ export default function TokenCreation() {
     decimals: "18",
     totalSupply: "",
     description: "",
-    walletId: "",
   });
+
+  const connectedWalletDoc = wallets.find(
+    (w) => w.walletAddress.toLowerCase() === address?.toLowerCase() && w.status === "active"
+  );
 
   useEffect(() => {
     if (currentTenant?.id) {
@@ -31,9 +36,6 @@ export default function TokenCreation() {
     try {
       const data = await getTenantWallets(currentTenant.id);
       setWallets(Array.isArray(data) ? data : []);
-      if (data.length > 0) {
-        setForm(f => ({ ...f, walletId: data[0].id }));
-      }
     } catch (e) {
       console.error("Failed to load wallets for token creation", e);
     }
@@ -54,10 +56,17 @@ export default function TokenCreation() {
   async function handleSubmit(e) {
     e.preventDefault();
     setMessage({ type: "", text: "" });
-    if (!form.name.trim() || !form.symbol.trim() || !form.walletId) {
-      setMessage({ type: "error", text: "Name, symbol, and assigning a wallet are required." });
+    
+    if (!connectedWalletDoc) {
+      setMessage({ type: "error", text: "You must connect an active, registered organization wallet to create a token." });
       return;
     }
+
+    if (!form.name.trim() || !form.symbol.trim()) {
+      setMessage({ type: "error", text: "Name and symbol are required." });
+      return;
+    }
+    
     setSaving(true);
     try {
       await createToken(currentTenant.id, {
@@ -66,7 +75,7 @@ export default function TokenCreation() {
         decimals: form.decimals,
         totalSupply: form.totalSupply,
         description: form.description,
-        walletId: form.walletId,
+        walletId: connectedWalletDoc.id,
       });
       setMessage({ type: "success", text: "Token saved to your organization workspace." });
       setForm(f => ({
@@ -202,27 +211,38 @@ export default function TokenCreation() {
                     </div>
                   </div>
                   <div>
-                    <label className="mb-1.5 block text-sm font-medium text-[var(--color-text)]">
-                      Link Wallet
+                    <label className="mb-2 block text-sm font-medium text-[var(--color-text)]">
+                      Linked Wallet
                     </label>
-                    <select
-                      className="input-field bg-[var(--color-surface)]"
-                      value={form.walletId}
-                      onChange={(e) => setForm((f) => ({ ...f, walletId: e.target.value }))}
-                      required
-                    >
-                      <option value="" disabled>Select a wallet</option>
-                      {wallets.map(w => (
-                        <option key={w.id} value={w.id}>
-                          {w.name} ({w.walletAddress.slice(0, 6)}...{w.walletAddress.slice(-4)})
-                        </option>
-                      ))}
-                    </select>
-                    {wallets.length === 0 && (
-                      <p className="mt-1.5 text-xs text-[var(--color-warning-text)]">
-                        No wallets found. Please add a wallet in the Wallets section first.
-                      </p>
-                    )}
+                    <div className="rounded-xl border border-[var(--color-border)] bg-[var(--color-surface-alt)] p-4">
+                      {!isConnected ? (
+                        <p className="text-sm font-medium text-[var(--color-error)]">
+                          MetaMask not connected. Please connect your wallet.
+                        </p>
+                      ) : !connectedWalletDoc ? (
+                        <div className="text-sm">
+                          <p className="font-semibold text-[var(--color-error)]">Wallet Not Registered</p>
+                          <p className="mt-1 text-[var(--color-text-muted)]">
+                            The connected address (<span className="font-mono">{address?.slice(0,6)}...{address?.slice(-4)}</span>) is not an active wallet in this organization. 
+                            Please register and verify it in the Wallets tab first.
+                          </p>
+                        </div>
+                      ) : (
+                        <div className="flex items-center gap-3">
+                          <div className="flex h-10 w-10 items-center justify-center rounded-full bg-[var(--color-success-bg)] text-[var(--color-success-text)] ring-1 ring-[var(--color-success-border)]">
+                            <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                            </svg>
+                          </div>
+                          <div>
+                            <p className="text-sm font-bold text-[var(--color-text)]">{connectedWalletDoc.name}</p>
+                            <p className="font-mono text-xs text-[var(--color-text-muted)]">
+                              {connectedWalletDoc.walletAddress}
+                            </p>
+                          </div>
+                        </div>
+                      )}
+                    </div>
                   </div>
                 </section>
 
@@ -259,7 +279,7 @@ export default function TokenCreation() {
                   <p className="text-[11px] text-[var(--color-text-muted)]">
                     Saved under organization <span className="font-mono text-[var(--color-text)]">{currentTenant.id}</span>
                   </p>
-                  <button type="submit" className="btn-primary w-full sm:w-auto sm:min-w-[140px]" disabled={saving}>
+                  <button type="submit" className="btn-primary w-full sm:w-auto sm:min-w-[140px]" disabled={saving || !connectedWalletDoc}>
                     {saving ? "Saving…" : "Save token"}
                   </button>
                 </div>
