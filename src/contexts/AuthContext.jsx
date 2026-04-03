@@ -2,8 +2,7 @@ import { createContext, useContext, useEffect, useState } from "react";
 import {
   createUserWithEmailAndPassword,
   signInWithEmailAndPassword,
-  getRedirectResult,
-  signInWithRedirect,
+  signInWithPopup,
   signOut,
   onAuthStateChanged,
   sendPasswordResetEmail,
@@ -42,9 +41,16 @@ export function AuthProvider({ children }) {
     return signInWithEmailAndPassword(auth, email, password);
   }
 
-  /** Full-page redirect — avoids Cross-Origin-Opener-Policy / popup issues with Google sign-in. */
-  function loginWithGoogle() {
-    return signInWithRedirect(auth, googleProvider);
+  async function loginWithGoogle() {
+    const result = await signInWithPopup(auth, googleProvider);
+    // Fire-and-forget profile creation — don't block navigation
+    createUserProfile(result.user).catch((err) =>
+      console.error("Background profile creation failed:", err)
+    );
+    processPendingInvitations(result.user).catch((err) =>
+      console.error("Background invitation processing failed:", err)
+    );
+    return result;
   }
 
   function logout() {
@@ -71,22 +77,6 @@ export function AuthProvider({ children }) {
         );
       }
     });
-
-    // Handle any pending Google redirect result in the background.
-    getRedirectResult(auth)
-      .then(async (redirectResult) => {
-        if (redirectResult?.user) {
-          try {
-            await createUserProfile(redirectResult.user);
-            await processPendingInvitations(redirectResult.user);
-          } catch (e) {
-            console.error("Error processing redirect user:", e);
-          }
-        }
-      })
-      .catch((e) => {
-        console.error("Google redirect sign-in error:", e);
-      });
 
     return () => unsubscribe();
   }, []);
