@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { useTenant } from "../contexts/TenantContext";
 import { getTenantTokens, createToken } from "../services/tokenService";
+import { getTenantWallets } from "../services/walletService";
 
 export default function TokenCreation() {
   const { currentTenant } = useTenant();
@@ -8,17 +9,35 @@ export default function TokenCreation() {
   const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
   const [message, setMessage] = useState({ type: "", text: "" });
+  const [wallets, setWallets] = useState([]);
+  const [selectedToken, setSelectedToken] = useState(null); // For the modal
   const [form, setForm] = useState({
     name: "",
     symbol: "",
     decimals: "18",
     totalSupply: "",
     description: "",
+    walletId: "",
   });
 
   useEffect(() => {
-    if (currentTenant?.id) loadTokens();
+    if (currentTenant?.id) {
+      loadTokens();
+      loadWallets();
+    }
   }, [currentTenant?.id]);
+
+  async function loadWallets() {
+    try {
+      const data = await getTenantWallets(currentTenant.id);
+      setWallets(Array.isArray(data) ? data : []);
+      if (data.length > 0) {
+        setForm(f => ({ ...f, walletId: data[0].id }));
+      }
+    } catch (e) {
+      console.error("Failed to load wallets for token creation", e);
+    }
+  }
 
   async function loadTokens() {
     setLoading(true);
@@ -35,8 +54,8 @@ export default function TokenCreation() {
   async function handleSubmit(e) {
     e.preventDefault();
     setMessage({ type: "", text: "" });
-    if (!form.name.trim() || !form.symbol.trim()) {
-      setMessage({ type: "error", text: "Name and symbol are required." });
+    if (!form.name.trim() || !form.symbol.trim() || !form.walletId) {
+      setMessage({ type: "error", text: "Name, symbol, and assigning a wallet are required." });
       return;
     }
     setSaving(true);
@@ -47,15 +66,18 @@ export default function TokenCreation() {
         decimals: form.decimals,
         totalSupply: form.totalSupply,
         description: form.description,
+        walletId: form.walletId,
       });
       setMessage({ type: "success", text: "Token saved to your organization workspace." });
-      setForm({
+      setForm(f => ({
+        ...f,
         name: "",
         symbol: "",
         decimals: "18",
         totalSupply: "",
         description: "",
-      });
+        // walletId stays the same so they can easily create multiple tokens for the same wallet
+      }));
       await loadTokens();
     } catch (err) {
       setMessage({ type: "error", text: err.message || "Failed to create token." });
@@ -179,6 +201,29 @@ export default function TokenCreation() {
                       />
                     </div>
                   </div>
+                  <div>
+                    <label className="mb-1.5 block text-sm font-medium text-[var(--color-text)]">
+                      Link Wallet
+                    </label>
+                    <select
+                      className="input-field bg-[var(--color-surface)]"
+                      value={form.walletId}
+                      onChange={(e) => setForm((f) => ({ ...f, walletId: e.target.value }))}
+                      required
+                    >
+                      <option value="" disabled>Select a wallet</option>
+                      {wallets.map(w => (
+                        <option key={w.id} value={w.id}>
+                          {w.name} ({w.walletAddress.slice(0, 6)}...{w.walletAddress.slice(-4)})
+                        </option>
+                      ))}
+                    </select>
+                    {wallets.length === 0 && (
+                      <p className="mt-1.5 text-xs text-[var(--color-warning-text)]">
+                        No wallets found. Please add a wallet in the Wallets section first.
+                      </p>
+                    )}
+                  </div>
                 </section>
 
                 <section className="mt-8 space-y-4 border-t border-[var(--color-border)] pt-8">
@@ -275,7 +320,14 @@ export default function TokenCreation() {
                 <ul className="grid gap-4 sm:grid-cols-2">
                   {tokens.map((t) => (
                     <li key={t.id}>
-                      <article className="group flex h-full flex-col rounded-xl border border-[var(--color-border)] bg-[var(--color-surface-alt)] p-4 transition-all hover:border-[var(--color-border-hover)] hover:shadow-md">
+                      {/* ADD tabIndex=0 / role=button so it's accessible */}
+                      <article 
+                        onClick={() => setSelectedToken(t)}
+                        onKeyDown={(e) => e.key === 'Enter' && setSelectedToken(t)}
+                        tabIndex={0}
+                        role="button"
+                        className="group flex h-full flex-col rounded-xl border border-[var(--color-border)] bg-[var(--color-surface-alt)] p-4 cursor-pointer transition-all hover:border-[var(--color-primary)] hover:shadow-[0_4px_20px_var(--color-primary-transparent)] outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-primary)]"
+                      >
                         <div className="flex items-start gap-3">
                           <div
                             className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-gradient-to-br from-[var(--color-primary)]/25 to-violet-600/20 text-sm font-bold text-[var(--color-primary)] ring-1 ring-inset ring-[var(--color-primary)]/20"
@@ -325,6 +377,86 @@ export default function TokenCreation() {
           </div>
         </div>
       </div>
+
+      {/* Token Details Modal */}
+      {selectedToken && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 sm:p-6">
+          {/* Backdrop */}
+          <div 
+            className="absolute inset-0 bg-black/60 backdrop-blur-sm transition-opacity"
+            onClick={() => setSelectedToken(null)}
+          />
+          
+          {/* Modal Content */}
+          <div className="relative w-full max-w-lg rounded-3xl border border-[var(--color-border)] bg-[var(--color-surface)] shadow-2xl overflow-hidden transform transition-all animate-in fade-in zoom-in-95 duration-200">
+            {/* Header Gradient */}
+            <div className="h-2 bg-gradient-to-r from-[var(--color-primary)] to-fuchsia-500" />
+            
+            <div className="p-6 sm:p-8">
+              <div className="flex items-start justify-between">
+                <div className="flex items-center gap-4">
+                  <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl bg-gradient-to-br from-[var(--color-primary)]/20 to-violet-500/10 text-xl font-bold text-[var(--color-primary)] ring-1 ring-inset ring-[var(--color-primary)]/30">
+                    {(selectedToken.symbol || "?").slice(0, 4)}
+                  </div>
+                  <div>
+                    <h2 className="text-xl font-bold text-[var(--color-text)]">{selectedToken.name}</h2>
+                    <p className="font-mono text-sm text-[var(--color-primary)]">{selectedToken.symbol}</p>
+                  </div>
+                </div>
+                <button
+                  onClick={() => setSelectedToken(null)}
+                  className="rounded-full bg-[var(--color-surface-alt)] p-2 text-[var(--color-text-muted)] hover:bg-[var(--color-border)] hover:text-[var(--color-text)] transition-colors"
+                >
+                  <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                  </svg>
+                </button>
+              </div>
+
+              <div className="mt-8 grid grid-cols-2 gap-4">
+                <div className="rounded-xl border border-[var(--color-border)] bg-[var(--color-surface-alt)] p-4">
+                  <p className="text-xs font-medium text-[var(--color-text-muted)]">Decimals</p>
+                  <p className="mt-1 text-base font-semibold font-mono text-[var(--color-text)]">{selectedToken.decimals}</p>
+                </div>
+                <div className="rounded-xl border border-[var(--color-border)] bg-[var(--color-surface-alt)] p-4">
+                  <p className="text-xs font-medium text-[var(--color-text-muted)]">Total Supply</p>
+                  <p className="mt-1 text-base font-semibold font-mono text-[var(--color-text)] truncate" title={selectedToken.totalSupply}>
+                    {selectedToken.totalSupply || "—"}
+                  </p>
+                </div>
+               </div>
+
+               <div className="mt-6 space-y-4 rounded-xl border border-[var(--color-border)] bg-[var(--color-surface-alt)] p-4">
+                  <div>
+                    <p className="text-[10px] font-medium uppercase tracking-wider text-[var(--color-text-muted)]">Linked Wallet ID</p>
+                    <p className="mt-1 font-mono text-sm text-[var(--color-text)] break-all">{selectedToken.walletId}</p>
+                  </div>
+                  <div className="border-t border-[var(--color-border)] pt-4">
+                    <p className="text-[10px] font-medium uppercase tracking-wider text-[var(--color-text-muted)]">Token ID (Database)</p>
+                    <p className="mt-1 font-mono text-sm text-[var(--color-text)] break-all">{selectedToken.id}</p>
+                  </div>
+               </div>
+
+               {selectedToken.organization && (
+                  <div className="mt-6 rounded-xl border border-indigo-500/20 bg-indigo-500/5 p-4">
+                    <p className="text-[10px] mb-2 font-medium uppercase tracking-wider text-indigo-400">Organization Details</p>
+                    <p className="text-sm font-semibold text-[var(--color-text)]">{selectedToken.organization.name}</p>
+                    <p className="mt-1 text-xs text-[var(--color-text-muted)] font-mono break-all pt-1">Org ID: {selectedToken.organization.id}</p>
+                  </div>
+               )}
+
+               {selectedToken.description && (
+                  <div className="mt-6">
+                    <p className="text-[10px] font-medium uppercase tracking-wider text-[var(--color-text-muted)] mb-2">Description</p>
+                    <p className="text-sm leading-relaxed text-[var(--color-text)] whitespace-pre-wrap">
+                      {selectedToken.description}
+                    </p>
+                  </div>
+               )}
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

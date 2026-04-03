@@ -21,7 +21,7 @@ router.get('/:tenantId', verifyAuthToken, async (req, res) => {
     const isMember = await checkMembership(db, uid, tenantId);
     if (!isMember) return res.status(403).json({ error: 'Access denied.' });
 
-    const snap = await db.collection('tenant_tokens')
+    const snap = await db.collection('tokens')
       .where('tenantId', '==', tenantId)
       .get();
 
@@ -49,7 +49,7 @@ router.get('/:tenantId', verifyAuthToken, async (req, res) => {
 router.post('/:tenantId', verifyAuthToken, async (req, res) => {
   try {
     const { tenantId } = req.params;
-    const { name, symbol, decimals, totalSupply, description } = req.body;
+    const { name, symbol, decimals, totalSupply, description, walletId } = req.body;
     const uid = req.user.uid;
     const db = admin.firestore();
 
@@ -62,17 +62,38 @@ router.post('/:tenantId', verifyAuthToken, async (req, res) => {
     if (!symbol || typeof symbol !== 'string' || !symbol.trim()) {
       return res.status(400).json({ error: 'Token symbol is required.' });
     }
+    if (!walletId || typeof walletId !== 'string') {
+      return res.status(400).json({ error: 'walletId is required.' });
+    }
 
     const dec = decimals === undefined || decimals === '' ? 18 : Number(decimals);
     if (!Number.isInteger(dec) || dec < 0 || dec > 30) {
       return res.status(400).json({ error: 'Decimals must be an integer between 0 and 30.' });
     }
 
-    const docRef = db.collection('tenant_tokens').doc();
+    // Fetch complete organization (tenant) details
+    const tenantDoc = await db.collection('tenants').doc(tenantId).get();
+    if (!tenantDoc.exists) {
+      return res.status(404).json({ error: 'Organization not found.' });
+    }
+    
+    // Construct the embedded organization object
+    const tenantData = tenantDoc.data();
+    const organization = {
+      id: tenantDoc.id,
+      name: tenantData.name || 'Unnamed Organization',
+      createdAt: tenantData.createdAt || null,
+      status: tenantData.status || null,
+      ownerId: tenantData.ownerId || null
+    };
+
+    const docRef = db.collection('tokens').doc();
 
     const payload = {
       id: docRef.id,
       tenantId,
+      organization,
+      walletId,
       name: name.trim().slice(0, 120),
       symbol: symbol.trim().toUpperCase().slice(0, 12),
       decimals: dec,
@@ -86,6 +107,8 @@ router.post('/:tenantId', verifyAuthToken, async (req, res) => {
     res.status(201).json({
       id: docRef.id,
       tenantId,
+      organization,
+      walletId,
       name: payload.name,
       symbol: payload.symbol,
       decimals: payload.decimals,
