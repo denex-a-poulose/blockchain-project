@@ -429,7 +429,7 @@ export default function TokenCreation() {
                <div className="mt-6 space-y-4 rounded-xl border border-[var(--color-border)] bg-[var(--color-surface-alt)] p-4">
                   <div>
                     <p className="text-[10px] font-medium uppercase tracking-wider text-[var(--color-text-muted)]">Linked Wallet ID</p>
-                    <p className="mt-1 font-mono text-sm text-[var(--color-text)] break-all">{selectedToken.walletId}</p>
+                    <p className="mt-1 font-mono text-sm text-[var(--color-text)] break-all">{selectedToken.walletId || "Unlinked (Legacy Token)"}</p>
                   </div>
                   <div className="border-t border-[var(--color-border)] pt-4">
                     <p className="text-[10px] font-medium uppercase tracking-wider text-[var(--color-text-muted)]">Token ID (Database)</p>
@@ -437,11 +437,16 @@ export default function TokenCreation() {
                   </div>
                </div>
 
-               {selectedToken.organization && (
+               {selectedToken.organization ? (
                   <div className="mt-6 rounded-xl border border-indigo-500/20 bg-indigo-500/5 p-4">
                     <p className="text-[10px] mb-2 font-medium uppercase tracking-wider text-indigo-400">Organization Details</p>
                     <p className="text-sm font-semibold text-[var(--color-text)]">{selectedToken.organization.name}</p>
                     <p className="mt-1 text-xs text-[var(--color-text-muted)] font-mono break-all pt-1">Org ID: {selectedToken.organization.id}</p>
+                  </div>
+               ) : (
+                  <div className="mt-6 rounded-xl border border-[var(--color-border)] bg-[var(--color-surface-alt)] opacity-75 p-4">
+                    <p className="text-[10px] mb-2 font-medium uppercase tracking-wider text-[var(--color-text-muted)]">Organization Details</p>
+                    <p className="text-xs italic text-[var(--color-text-muted)]">This token was created before organization embedding was enabled.</p>
                   </div>
                )}
 
