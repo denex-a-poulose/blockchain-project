@@ -28,9 +28,13 @@ export function AuthProvider({ children }) {
 
   async function signup(email, password, name) {
     const result = await createUserWithEmailAndPassword(auth, email, password);
-    // Create Firestore user profile + process any pending invitations
-    await createUserProfile(result.user, name);
-    await processPendingInvitations(result.user);
+    // Fire-and-forget profile creation — don't block auth navigation
+    createUserProfile(result.user, name).catch((err) =>
+      console.error("Background profile creation failed:", err)
+    );
+    processPendingInvitations(result.user).catch((err) =>
+      console.error("Background invitation processing failed:", err)
+    );
     return result;
   }
 
@@ -52,39 +56,39 @@ export function AuthProvider({ children }) {
   }
 
   useEffect(() => {
-    let unsubscribe = () => {};
-    let cancelled = false;
+    // Set up the auth state listener IMMEDIATELY so we never miss a
+    // state change (e.g. after email/password sign-in).
+    const unsubscribe = onAuthStateChanged(auth, (user) => {
+      // Set currentUser RIGHT AWAY — never block on network calls.
+      setCurrentUser(user);
+      setLoading(false);
 
-    (async () => {
-      try {
-        const redirectResult = await getRedirectResult(auth);
-        if (cancelled) return;
-        if (redirectResult?.user) {
-          await createUserProfile(redirectResult.user);
-          await processPendingInvitations(redirectResult.user);
-        }
-      } catch (e) {
-        console.error("Google redirect sign-in error:", e);
+      // Profile creation happens in the background; if the backend is
+      // down the user still gets into the app.
+      if (user) {
+        createUserProfile(user).catch((err) =>
+          console.error("Failed to ensure user profile:", err)
+        );
       }
-      if (cancelled) return;
+    });
 
-      unsubscribe = onAuthStateChanged(auth, async (user) => {
-        if (user) {
+    // Handle any pending Google redirect result in the background.
+    getRedirectResult(auth)
+      .then(async (redirectResult) => {
+        if (redirectResult?.user) {
           try {
-            await createUserProfile(user);
-          } catch (error) {
-            console.error("Failed to ensure user profile:", error);
+            await createUserProfile(redirectResult.user);
+            await processPendingInvitations(redirectResult.user);
+          } catch (e) {
+            console.error("Error processing redirect user:", e);
           }
         }
-        setCurrentUser(user);
-        setLoading(false);
+      })
+      .catch((e) => {
+        console.error("Google redirect sign-in error:", e);
       });
-    })();
 
-    return () => {
-      cancelled = true;
-      unsubscribe();
-    };
+    return () => unsubscribe();
   }, []);
 
   const value = {
