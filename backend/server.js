@@ -20,6 +20,8 @@ const app = express();
 const allowedOrigins = [
   'http://localhost:5173',
   'http://localhost:3000',
+  'https://blockchain-project-cbf20.web.app',
+  'https://blockchain-project-cbf20.firebaseapp.com',
   process.env.FRONTEND_URL
 ].filter(Boolean);
 
