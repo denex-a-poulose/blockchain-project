@@ -8,6 +8,7 @@ import ForgotPassword from "./pages/ForgotPassword";
 import Landing from "./pages/Landing";
 import CreateTenant from "./pages/CreateTenant";
 import WagmiProviderSetup from "./components/WagmiProviderSetup";
+import TokenDetails from "./pages/TokenDetails";
 
 export default function App() {
   return (
@@ -32,6 +33,14 @@ export default function App() {
               element={
                 <ProtectedRoute>
                   <CreateTenant />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/token/:tokenId"
+              element={
+                <ProtectedRoute>
+                  <TokenDetails />
                 </ProtectedRoute>
               }
             />

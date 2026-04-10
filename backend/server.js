@@ -16,7 +16,23 @@ try {
 
 const app = express();
 
-app.use(cors());
+// Configure strict CORS for production
+const allowedOrigins = [
+  'http://localhost:5173',
+  'http://localhost:3000',
+  process.env.FRONTEND_URL
+].filter(Boolean);
+
+app.use(cors({
+  origin: function (origin, callback) {
+    if (!origin || allowedOrigins.includes(origin)) {
+      callback(null, true);
+    } else {
+      callback(new Error('CORS policy violation'));
+    }
+  },
+  credentials: true
+}));
 app.use(express.json());
 
 // Quick deploy check: GET /api should list modules (use after redeploy to confirm tokens route is live)

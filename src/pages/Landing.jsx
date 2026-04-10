@@ -3,7 +3,8 @@ import { useNavigate } from "react-router-dom";
 import TenantSwitcher from "../components/TenantSwitcher";
 import TenantDashboard from "./TenantDashboard";
 import WalletManager from "../components/WalletManager";
-import TokenCreation from "./TokenCreation";
+import WorkspaceDashboard from "./WorkspaceDashboard";
+import TokensList from "./TokensList";
 import Navbar from "../components/Navbar";
 import Sidebar from "../components/Sidebar";
 import { useState } from "react";
@@ -66,8 +67,10 @@ export default function Landing() {
             <TenantDashboard />
           ) : activeTab === "wallets" ? (
             <WalletManager />
+          ) : activeTab === "workspace" ? (
+            <WorkspaceDashboard />
           ) : (
-            <TokenCreation />
+            <TokensList />
           )
         ) : null}
         </main>

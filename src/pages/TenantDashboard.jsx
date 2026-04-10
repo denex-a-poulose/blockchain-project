@@ -77,11 +77,12 @@ export default function TenantDashboard() {
   const canManage = currentUserRole === "admin" || currentUserRole === "owner";
 
   return (
-    <div className="max-w-2xl mx-auto">
+    <div className="max-w-2xl mx-auto animation-fade-in">
       {/* Tenant info */}
-      <div className="bg-[var(--color-surface)] border border-[var(--color-border)] rounded-2xl p-6 mb-6">
-        <div className="flex items-center gap-3 mb-4">
-          <div className="w-10 h-10 bg-[var(--color-primary)] rounded-xl flex items-center justify-center text-white text-lg font-semibold">
+      <div className="glass-panel rounded-3xl p-8 mb-8 relative overflow-hidden">
+        <div className="absolute top-0 left-0 w-full h-1.5 bg-gradient-to-r from-[var(--color-primary)] to-indigo-500" />
+        <div className="flex items-center gap-4 mb-6 pt-2">
+          <div className="w-14 h-14 bg-gradient-to-br from-indigo-500/20 to-purple-500/20 border border-[var(--color-primary)]/30 rounded-2xl flex items-center justify-center text-[var(--color-primary)] text-xl font-bold shadow-[0_0_15px_rgba(139,92,246,0.15)]">
             {currentTenant.name?.charAt(0)?.toUpperCase()}
           </div>
           <div>
@@ -141,9 +142,9 @@ export default function TenantDashboard() {
 
       {/* Invite form */}
       {canManage && (
-        <div className="bg-[var(--color-surface)] border border-[var(--color-border)] rounded-2xl p-6 mb-6">
-          <h3 className="text-sm font-semibold text-[var(--color-text)] mb-1">
-            Invite a member
+        <div className="glass-panel rounded-3xl p-8 mb-8">
+          <h3 className="text-lg font-bold text-[var(--color-text)] mb-1">
+            Invite a Member
           </h3>
           <p className="text-xs text-[var(--color-text-muted)] mb-3">
             Enter their email. If they already have an account, they'll be added instantly. Otherwise, they'll be added when they sign up with that email.
@@ -177,9 +178,9 @@ export default function TenantDashboard() {
       )}
 
       {/* Members list */}
-      <div className="bg-[var(--color-surface)] border border-[var(--color-border)] rounded-2xl overflow-hidden">
-        <div className="px-6 py-4 border-b border-[var(--color-border)]">
-          <h3 className="text-sm font-semibold text-[var(--color-text)]">
+      <div className="glass-panel rounded-3xl overflow-hidden mb-8">
+        <div className="px-8 py-5 border-b border-[var(--color-border)] bg-white/5">
+          <h3 className="text-lg font-bold text-[var(--color-text)]">
             Members ({members.length})
           </h3>
         </div>

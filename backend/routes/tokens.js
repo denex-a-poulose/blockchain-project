@@ -56,19 +56,38 @@ router.post('/:tenantId', verifyAuthToken, async (req, res) => {
     const isMember = await checkMembership(db, uid, tenantId);
     if (!isMember) return res.status(403).json({ error: 'Access denied.' });
 
-    if (!name || typeof name !== 'string' || !name.trim()) {
-      return res.status(400).json({ error: 'Token name is required.' });
+    const nameStr = typeof name === 'string' ? name.trim() : '';
+    if (nameStr.length < 3 || !/^[A-Za-z0-9 ]+$/.test(nameStr)) {
+      return res.status(400).json({ error: 'Token name must be at least 3 characters long and alphanumeric.' });
     }
-    if (!symbol || typeof symbol !== 'string' || !symbol.trim()) {
-      return res.status(400).json({ error: 'Token symbol is required.' });
+
+    const symbolStr = typeof symbol === 'string' ? symbol.trim().toUpperCase() : '';
+    if (symbolStr.length < 2 || symbolStr.length > 8 || !/^[A-Z0-9]+$/.test(symbolStr)) {
+      return res.status(400).json({ error: 'Token symbol must be strictly 2-8 alphanumeric characters.' });
     }
+
     if (!walletId || typeof walletId !== 'string') {
       return res.status(400).json({ error: 'walletId is required.' });
     }
 
+    // Security Check: Verify wallet actually exists, belongs to THIS tenant, and is active
+    const walletDoc = await db.collection('tenant_wallets').doc(walletId).get();
+    if (!walletDoc.exists) {
+      return res.status(404).json({ error: 'Authorized wallet not found.' });
+    }
+    const walletData = walletDoc.data();
+    if (walletData.tenantId !== tenantId || walletData.status !== 'active') {
+      return res.status(403).json({ error: 'The provided wallet is either inactive or does not belong to this organization.' });
+    }
+
     const dec = decimals === undefined || decimals === '' ? 18 : Number(decimals);
-    if (!Number.isInteger(dec) || dec < 0 || dec > 30) {
-      return res.status(400).json({ error: 'Decimals must be an integer between 0 and 30.' });
+    if (!Number.isInteger(dec) || dec < 0 || dec > 18) {
+      return res.status(400).json({ error: 'Decimals must be an integer between 0 and 18.' });
+    }
+
+    const supplyStr = typeof totalSupply === 'string' ? totalSupply.trim() : String(totalSupply ?? '');
+    if (supplyStr !== '' && !/^\d+$/.test(supplyStr)) {
+      return res.status(400).json({ error: 'Total supply must only contain digits.' });
     }
 
     // Fetch complete organization (tenant) details
@@ -94,11 +113,11 @@ router.post('/:tenantId', verifyAuthToken, async (req, res) => {
       tenantId,
       organization,
       walletId,
-      name: name.trim().slice(0, 120),
-      symbol: symbol.trim().toUpperCase().slice(0, 12),
+      name: nameStr,
+      symbol: symbolStr,
       decimals: dec,
-      totalSupply: typeof totalSupply === 'string' ? totalSupply.trim().slice(0, 64) : String(totalSupply ?? ''),
-      description: typeof description === 'string' ? description.trim().slice(0, 2000) : '',
+      totalSupply: supplyStr,
+      description: typeof description === 'string' ? description.trim().slice(0, 200) : '',
       createdBy: uid,
       createdAt: admin.firestore.FieldValue.serverTimestamp(),
     };

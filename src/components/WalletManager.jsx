@@ -91,10 +91,10 @@ export default function WalletManager() {
   if (!currentTenant) return null;
 
   return (
-    <div className="max-w-2xl mx-auto">
-      <div className="mb-6">
-        <h2 className="text-xl font-semibold text-[var(--color-text)]">Wallets</h2>
-        <p className="text-sm text-[var(--color-text-muted)] mt-1">
+    <div className="max-w-2xl mx-auto animation-fade-in">
+      <div className="mb-8">
+        <h2 className="text-3xl font-bold tracking-tight text-[var(--color-text)]">Wallet Management</h2>
+        <p className="text-sm text-[var(--color-text-muted)] mt-2 leading-relaxed max-w-lg">
           Manage Web3 wallets registered to this organization.
         </p>
       </div>
@@ -110,8 +110,8 @@ export default function WalletManager() {
       )}
 
       {/* Connect MetaMask Card */}
-      <div className="bg-[var(--color-surface)] border border-[var(--color-border)] rounded-2xl p-6 mb-6">
-        <h3 className="text-sm font-semibold text-[var(--color-text)] mb-3">
+      <div className="glass-panel rounded-3xl p-8 mb-8">
+        <h3 className="text-lg font-bold tracking-tight text-[var(--color-text)] mb-4">
           Connect your Web3 Wallet
         </h3>
         {!isConnected ? (
@@ -202,9 +202,9 @@ export default function WalletManager() {
       </div>
 
       {/* Wallets List */}
-      <div className="bg-[var(--color-surface)] border border-[var(--color-border)] rounded-2xl overflow-hidden">
-        <div className="px-6 py-4 border-b border-[var(--color-border)]">
-          <h3 className="text-sm font-semibold text-[var(--color-text)]">
+      <div className="glass-panel rounded-3xl overflow-hidden mb-8">
+        <div className="px-8 py-5 border-b border-[var(--color-border)] bg-white/5">
+          <h3 className="text-lg font-bold tracking-tight text-[var(--color-text)]">
             Registered Wallets ({wallets.length})
           </h3>
         </div>
