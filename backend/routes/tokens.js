@@ -49,7 +49,10 @@ router.get('/:tenantId', verifyAuthToken, async (req, res) => {
 router.post('/:tenantId', verifyAuthToken, async (req, res) => {
   try {
     const { tenantId } = req.params;
-    const { name, symbol, decimals, totalSupply, description, walletId } = req.body;
+    const { 
+      name, symbol, decimals, totalSupply, description, walletId,
+      mainCurrency, pricePerToken, softCap, hardCap, minInvestment
+    } = req.body;
     const uid = req.user.uid;
     const db = admin.firestore();
 
@@ -90,6 +93,31 @@ router.post('/:tenantId', verifyAuthToken, async (req, res) => {
       return res.status(400).json({ error: 'Total supply must only contain digits.' });
     }
 
+    const currencyStr = typeof mainCurrency === 'string' ? mainCurrency.trim().toUpperCase() : '';
+    if (!currencyStr) {
+      return res.status(400).json({ error: 'Main currency is required for the token market.' });
+    }
+
+    const priceStr = typeof pricePerToken === 'string' ? pricePerToken.trim() : String(pricePerToken ?? '');
+    if (!priceStr || !/^\d+(\.\d+)?$/.test(priceStr)) {
+      return res.status(400).json({ error: 'Price per token is required and must be a valid number.' });
+    }
+
+    const softCapStr = typeof softCap === 'string' ? softCap.trim() : String(softCap ?? '');
+    if (softCapStr !== '' && !/^\d+(\.\d+)?$/.test(softCapStr)) {
+      return res.status(400).json({ error: 'Soft cap must be a valid number.' });
+    }
+
+    const hardCapStr = typeof hardCap === 'string' ? hardCap.trim() : String(hardCap ?? '');
+    if (hardCapStr !== '' && !/^\d+(\.\d+)?$/.test(hardCapStr)) {
+      return res.status(400).json({ error: 'Hard cap must be a valid number.' });
+    }
+
+    const minInvStr = typeof minInvestment === 'string' ? minInvestment.trim() : String(minInvestment ?? '');
+    if (minInvStr !== '' && !/^\d+(\.\d+)?$/.test(minInvStr)) {
+      return res.status(400).json({ error: 'Minimum investment must be a valid number.' });
+    }
+
     // Fetch complete organization (tenant) details
     const tenantDoc = await db.collection('tenants').doc(tenantId).get();
     if (!tenantDoc.exists) {
@@ -118,6 +146,11 @@ router.post('/:tenantId', verifyAuthToken, async (req, res) => {
       decimals: dec,
       totalSupply: supplyStr,
       description: typeof description === 'string' ? description.trim().slice(0, 200) : '',
+      mainCurrency: currencyStr,
+      pricePerToken: priceStr,
+      softCap: softCapStr,
+      hardCap: hardCapStr,
+      minInvestment: minInvStr,
       createdBy: uid,
       createdAt: admin.firestore.FieldValue.serverTimestamp(),
     };
@@ -133,6 +166,11 @@ router.post('/:tenantId', verifyAuthToken, async (req, res) => {
       decimals: payload.decimals,
       totalSupply: payload.totalSupply,
       description: payload.description,
+      mainCurrency: payload.mainCurrency,
+      pricePerToken: payload.pricePerToken,
+      softCap: payload.softCap,
+      hardCap: payload.hardCap,
+      minInvestment: payload.minInvestment,
       createdBy: uid,
     });
   } catch (error) {
