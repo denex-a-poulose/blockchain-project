@@ -51,7 +51,8 @@ router.post('/:tenantId', verifyAuthToken, async (req, res) => {
     const { tenantId } = req.params;
     const { 
       name, symbol, decimals, totalSupply, description, walletId,
-      mainCurrency, pricePerToken, softCap, hardCap, minInvestment
+      mainCurrency, pricePerToken, softCap, hardCap, minInvestment,
+      contractAddress, transactionHash
     } = req.body;
     const uid = req.user.uid;
     const db = admin.firestore();
@@ -134,6 +135,14 @@ router.post('/:tenantId', verifyAuthToken, async (req, res) => {
       ownerId: tenantData.ownerId || null
     };
 
+    // Validate Web3 parameters
+    if (!contractAddress || typeof contractAddress !== 'string' || !/^0x[a-fA-F0-9]{40}$/.test(contractAddress)) {
+      return res.status(400).json({ error: 'Valid contractAddress is required.' });
+    }
+    if (!transactionHash || typeof transactionHash !== 'string' || !/^0x[a-fA-F0-9]{64}$/.test(transactionHash)) {
+      return res.status(400).json({ error: 'Valid transactionHash is required.' });
+    }
+
     const docRef = db.collection('tokens').doc();
 
     const payload = {
@@ -151,6 +160,8 @@ router.post('/:tenantId', verifyAuthToken, async (req, res) => {
       softCap: softCapStr,
       hardCap: hardCapStr,
       minInvestment: minInvStr,
+      contractAddress,
+      transactionHash,
       createdBy: uid,
       createdAt: admin.firestore.FieldValue.serverTimestamp(),
     };
@@ -171,6 +182,8 @@ router.post('/:tenantId', verifyAuthToken, async (req, res) => {
       softCap: payload.softCap,
       hardCap: payload.hardCap,
       minInvestment: payload.minInvestment,
+      contractAddress: payload.contractAddress,
+      transactionHash: payload.transactionHash,
       createdBy: uid,
     });
   } catch (error) {

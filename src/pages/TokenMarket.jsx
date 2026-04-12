@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
-import { useAccount, useConnect, useDisconnect, useSignMessage } from "wagmi";
+import { useAccount, useConnect, useDisconnect, useSignMessage, useWalletClient, usePublicClient } from "wagmi";
 import { injected } from "wagmi/connectors";
+import TokenAssetData from "../utils/abis/TokenAsset.json";
 import { useTenant } from "../contexts/TenantContext";
 import { createToken, getTenantTokens } from "../services/tokenService";
 import { getTenantWallets, addWallet, getNonce, verifyWallet } from "../services/walletService";
@@ -15,6 +16,8 @@ export default function TokenMarket() {
   const { connectors, connect, isPending: isConnectPending } = useConnect();
   const { disconnect } = useDisconnect();
   const { signMessageAsync } = useSignMessage();
+  const { data: walletClient } = useWalletClient();
+  const publicClient = usePublicClient();
 
   // Data states
   const [wallets, setWallets] = useState([]);
@@ -107,8 +110,25 @@ export default function TokenMarket() {
     if (!form.walletId) return setFormMsg({ type: "error", text: "You must link an active wallet." });
     if (!form.pricePerToken) return setFormMsg({ type: "error", text: "Price per token is required." });
 
+    if (!walletClient) return setFormMsg({ type: "error", text: "Please connect your wallet first to deploy." });
+
     setSaving(true);
     try {
+      setFormMsg({ type: "success", text: "Deploying to Blockchain... Please confirm the transaction in MetaMask." });
+
+      const txHash = await walletClient.deployContract({
+        abi: TokenAssetData.abi,
+        bytecode: TokenAssetData.bytecode,
+        args: [nameStr, symbolStr, parseInt(form.decimals), address],
+      });
+
+      setFormMsg({ type: "success", text: "Transaction submitted! Waiting for network confirmation..." });
+
+      const receipt = await publicClient.waitForTransactionReceipt({ hash: txHash });
+      const contractAddress = receipt.contractAddress;
+
+      setFormMsg({ type: "success", text: "Contract secured! Registering asset to your market..." });
+
       await createToken(currentTenant.id, {
         name: nameStr,
         symbol: symbolStr,
@@ -121,13 +141,16 @@ export default function TokenMarket() {
         softCap: form.softCap,
         hardCap: form.hardCap,
         minInvestment: form.minInvestment,
+        contractAddress,
+        transactionHash: txHash
       });
-      setFormMsg({ type: "success", text: "Market Asset successfully launched." });
+      setFormMsg({ type: "success", text: `Market Asset successfully launched at ${contractAddress.slice(0, 8)}...` });
       setForm(f => ({
         ...f, name: "", symbol: "", decimals: "18", description: "", pricePerToken: "", softCap: "", hardCap: "", minInvestment: ""
       }));
       await loadData();
     } catch (err) {
+      console.error(err);
       setFormMsg({ type: "error", text: err.message || "Failed to create market asset." });
     }
     setSaving(false);
@@ -421,9 +444,17 @@ export default function TokenMarket() {
                     <h4 className="text-[var(--color-text)] font-bold truncate">{t.name}</h4>
                     <p className="text-xs text-[var(--color-text-muted)] mt-1 font-mono break-all">{t.id}</p>
                   </div>
-                  <div className="mt-4 pt-4 border-t border-[var(--color-border)] flex justify-between text-[10px] text-[var(--color-text-muted)] font-semibold uppercase">
-                      <span>{t.walletId.slice(0,6)}...{t.walletId.slice(-4)}</span>
-                      <span>Decimals: {t.decimals}</span>
+                  <div className="mt-4 pt-4 border-t border-[var(--color-border)] flex flex-col gap-1.5 text-[10px] text-[var(--color-text-muted)] font-semibold uppercase">
+                      <div className="flex justify-between items-center">
+                          <span>Wallet: {t.walletId.slice(0,6)}...{t.walletId.slice(-4)}</span>
+                          <span>Decimals: {t.decimals}</span>
+                      </div>
+                      {t.contractAddress && (
+                        <div className="flex items-center gap-1.5 bg-black/20 rounded-md p-1.5 mt-1 text-[var(--color-primary)]">
+                            <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1" /></svg>
+                            <span className="font-mono tracking-widest break-all">On-Chain: {t.contractAddress.slice(0, 10)}...</span>
+                        </div>
+                      )}
                   </div>
                 </div>
               ))}
