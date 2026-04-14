@@ -486,7 +486,7 @@ export default function TokenMarket() {
                   <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-[var(--color-primary)] to-[var(--color-secondary)] flex items-center justify-center text-white font-bold text-lg shadow-md">
                     {(t.symbol || '?').charAt(0)}
                   </div>
-                  <StatusBadge status={t.status} />
+                  <StatusBadge status={t.status || (t.contractAddress ? 'deployed' : 'pending')} />
                 </div>
 
                 {/* Info */}
@@ -528,31 +528,41 @@ export default function TokenMarket() {
                 </div>
 
                 {/* ── Status-driven Action Buttons ── */}
-                {actionLoading[t.id] ? (
-                  <div className="flex items-center gap-2 bg-white/5 rounded-xl p-3 text-xs text-[var(--color-text-muted)]">
-                    <svg className="w-4 h-4 animate-spin text-[var(--color-primary)]" fill="none" viewBox="0 0 24 24">
-                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
-                      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
-                    </svg>
-                    {actionLoading[t.id]}
-                  </div>
-                ) : t.status === 'pending' ? (
-                  <button onClick={() => handleCompile(t)} className="w-full py-2.5 rounded-xl text-xs font-bold uppercase tracking-wider bg-amber-500/15 text-amber-400 border border-amber-500/25 hover:bg-amber-500/25 transition-colors">
-                    ⚡ Compile Contract
-                  </button>
-                ) : t.status === 'compiled' ? (
-                  <button onClick={() => handleDeploy(t)} className="w-full py-2.5 rounded-xl text-xs font-bold uppercase tracking-wider bg-gradient-to-r from-[var(--color-primary)] to-[var(--color-secondary)] text-white shadow-lg shadow-[var(--color-primary)]/20 hover:opacity-90 transition-opacity">
-                    🚀 Deploy to Blockchain
-                  </button>
-                ) : t.status === 'failed' ? (
-                  <button onClick={() => handleRetry(t)} className="w-full py-2.5 rounded-xl text-xs font-bold uppercase tracking-wider bg-red-500/15 text-red-400 border border-red-500/25 hover:bg-red-500/25 transition-colors">
-                    🔄 Retry (Recompile)
-                  </button>
-                ) : t.status === 'deployed' ? (
-                  <button onClick={() => navigate('/token/' + t.id, { state: { token: t } })} className="w-full py-2.5 rounded-xl text-xs font-bold uppercase tracking-wider bg-emerald-500/15 text-emerald-400 border border-emerald-500/25 hover:bg-emerald-500/25 transition-colors">
-                    View Details →
-                  </button>
-                ) : null}
+                {(() => {
+                  // Normalize status for legacy tokens created before the pipeline
+                  const status = t.status || (t.contractAddress ? 'deployed' : 'pending');
+
+                  if (actionLoading[t.id]) return (
+                    <div className="flex items-center gap-2 bg-white/5 rounded-xl p-3 text-xs text-[var(--color-text-muted)]">
+                      <svg className="w-4 h-4 animate-spin text-[var(--color-primary)]" fill="none" viewBox="0 0 24 24">
+                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
+                      </svg>
+                      {actionLoading[t.id]}
+                    </div>
+                  );
+                  if (status === 'pending') return (
+                    <button onClick={() => handleCompile(t)} className="w-full py-2.5 rounded-xl text-xs font-bold uppercase tracking-wider bg-amber-500/15 text-amber-400 border border-amber-500/25 hover:bg-amber-500/25 transition-colors">
+                      ⚡ Compile Contract
+                    </button>
+                  );
+                  if (status === 'compiled') return (
+                    <button onClick={() => handleDeploy(t)} className="w-full py-2.5 rounded-xl text-xs font-bold uppercase tracking-wider bg-gradient-to-r from-[var(--color-primary)] to-[var(--color-secondary)] text-white shadow-lg shadow-[var(--color-primary)]/20 hover:opacity-90 transition-opacity">
+                      🚀 Deploy to Blockchain
+                    </button>
+                  );
+                  if (status === 'failed') return (
+                    <button onClick={() => handleRetry(t)} className="w-full py-2.5 rounded-xl text-xs font-bold uppercase tracking-wider bg-red-500/15 text-red-400 border border-red-500/25 hover:bg-red-500/25 transition-colors">
+                      🔄 Retry (Recompile)
+                    </button>
+                  );
+                  if (status === 'deployed') return (
+                    <button onClick={() => navigate('/token/' + t.id, { state: { token: t } })} className="w-full py-2.5 rounded-xl text-xs font-bold uppercase tracking-wider bg-emerald-500/15 text-emerald-400 border border-emerald-500/25 hover:bg-emerald-500/25 transition-colors">
+                      View Details →
+                    </button>
+                  );
+                  return null;
+                })()}
               </div>
             ))}
           </div>

@@ -260,8 +260,10 @@ router.post('/:tenantId/:tokenId/compile', verifyAuthToken, async (req, res) => 
     if (tokenData.tenantId !== tenantId) {
       return res.status(403).json({ error: 'Token does not belong to this organization.' });
     }
-    if (tokenData.status !== 'pending' && tokenData.status !== 'failed') {
-      return res.status(400).json({ error: `Cannot compile a token with status "${tokenData.status}".` });
+
+    const status = tokenData.status || (tokenData.contractAddress ? 'deployed' : 'pending');
+    if (status !== 'pending' && status !== 'failed') {
+      return res.status(400).json({ error: `Cannot compile a token with status "${status}".` });
     }
 
     // Generate & compile
@@ -313,8 +315,10 @@ router.patch('/:tenantId/:tokenId/deploy', verifyAuthToken, async (req, res) => 
     if (tokenData.tenantId !== tenantId) {
       return res.status(403).json({ error: 'Token does not belong to this organization.' });
     }
-    if (tokenData.status !== 'compiled') {
-      return res.status(400).json({ error: `Cannot deploy a token with status "${tokenData.status}". Compile first.` });
+
+    const status = tokenData.status || (tokenData.contractAddress ? 'deployed' : 'pending');
+    if (status !== 'compiled') {
+      return res.status(400).json({ error: `Cannot deploy a token with status "${status}". Compile first.` });
     }
 
     await tokenRef.update({
@@ -355,8 +359,10 @@ router.patch('/:tenantId/:tokenId/confirm', verifyAuthToken, async (req, res) =>
     if (tokenData.tenantId !== tenantId) {
       return res.status(403).json({ error: 'Token does not belong to this organization.' });
     }
-    if (tokenData.status !== 'deploying') {
-      return res.status(400).json({ error: `Cannot confirm a token with status "${tokenData.status}".` });
+
+    const status = tokenData.status || (tokenData.contractAddress ? 'deployed' : 'pending');
+    if (status !== 'deploying') {
+      return res.status(400).json({ error: `Cannot confirm a token with status "${status}".` });
     }
 
     await tokenRef.update({
