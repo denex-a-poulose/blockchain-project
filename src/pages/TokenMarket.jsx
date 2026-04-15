@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { useAccount, useConnect, useDisconnect, useSignMessage, useWalletClient, usePublicClient } from "wagmi";
+import { useAccount, useConnect, useDisconnect, useSignMessage, useWalletClient, usePublicClient, useSwitchChain } from "wagmi";
 import { injected } from "wagmi/connectors";
 import { useTenant } from "../contexts/TenantContext";
 import {
@@ -159,9 +159,25 @@ export default function TokenMarket() {
     setActionLoading(prev => ({ ...prev, [token.id]: null }));
   }
 
+  const { chain } = useAccount();
+  const { switchChain } = useSwitchChain();
+
   /* ── Step 3: Deploy to Blockchain ── */
   async function handleDeploy(token) {
     if (!walletClient) return alert("Please connect your wallet first.");
+
+    // Ensure we are on Sepolia (Chain ID: 11155111)
+    if (chain?.id !== 11155111) {
+      if (window.confirm("You are not on the Sepolia Testnet. Would you like to switch now?")) {
+        try {
+          await switchChain({ chainId: 11155111 });
+        } catch (e) {
+          return alert("Please switch your MetaMask to Sepolia Testnet to continue.");
+        }
+      } else {
+        return;
+      }
+    }
 
     setActionLoading(prev => ({ ...prev, [token.id]: "Waiting for MetaMask..." }));
     try {
