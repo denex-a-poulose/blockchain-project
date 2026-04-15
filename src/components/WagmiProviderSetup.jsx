@@ -6,11 +6,11 @@ import { injected } from 'wagmi/connectors';
 const queryClient = new QueryClient();
 
 export const config = createConfig({
-  chains: [mainnet, sepolia],
+  chains: [sepolia, mainnet],
   connectors: [injected()],
   transports: {
-    [mainnet.id]: http(),
     [sepolia.id]: http(),
+    [mainnet.id]: http(),
   },
 });
 
