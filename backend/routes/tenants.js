@@ -229,4 +229,58 @@ router.delete('/membership/:id', verifyAuthToken, async (req, res) => {
   }
 });
 
+// 9. GET TENANT INVESTORS
+router.get('/:id/investors', verifyAuthToken, async (req, res) => {
+  try {
+    const tenantId = req.params.id;
+    const db = admin.firestore();
+    
+    // Get all orders for this tenant
+    const ordersSnap = await db.collection('orders').where('tenantId', '==', tenantId).get();
+    const orders = ordersSnap.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+    
+    // Group by buyerId
+    const investorsMap = {};
+    for (const order of orders) {
+       const buyerId = order.buyerId;
+       if (!buyerId) continue;
+       if (!investorsMap[buyerId]) {
+         investorsMap[buyerId] = {
+           id: buyerId,
+           orders: [],
+           totalInvested: 0,
+           totalTokens: 0,
+           latestInvestment: null
+         };
+       }
+       investorsMap[buyerId].orders.push(order);
+       investorsMap[buyerId].totalInvested += Number(order.totalPrice || 0);
+       investorsMap[buyerId].totalTokens += Number(order.quantity || 0);
+       
+       const orderTime = order.createdAt?._seconds || 0;
+       if (!investorsMap[buyerId].latestInvestment || orderTime > investorsMap[buyerId].latestInvestment) {
+           investorsMap[buyerId].latestInvestment = orderTime;
+       }
+    }
+    
+    // Fetch user details
+    const investors = await Promise.all(Object.values(investorsMap).map(async (inv) => {
+       const userSnap = await db.collection('tenant_users').doc(inv.id).get();
+       const userData = userSnap.exists ? userSnap.data() : {};
+       return {
+          ...inv,
+          name: userData.name || 'Unknown Investor',
+          email: userData.email || 'No Email provided'
+       };
+    }));
+    
+    investors.sort((a,b) => b.latestInvestment - a.latestInvestment);
+    
+    res.status(200).json(investors);
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: 'Internal Server Error' });
+  }
+});
+
 module.exports = router;

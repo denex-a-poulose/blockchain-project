@@ -1,5 +1,18 @@
 {
   "projects": {
     "default": "blockchain-project-cbf20"
-  }
+  },
+  "targets": {
+    "blockchain-project-cbf20": {
+      "hosting": {
+        "management": [
+          "blockchain-project-cbf20"
+        ],
+        "portal": [
+          "portal-bc"
+        ]
+      }
+    }
+  },
+  "etags": {}
 }

@@ -7,6 +7,8 @@ import TokenMarket from "./TokenMarket";
 import Navbar from "../components/Navbar";
 import Sidebar from "../components/Sidebar";
 import TokenDetailView from "../components/TokenDetailView";
+import OrdersList from "../components/OrdersList";
+import UsersList from "../components/UsersList";
 import { useState } from "react";
 
 export default function Landing() {
@@ -47,6 +49,8 @@ export default function Landing() {
             if (activeTab === "overview") return <TenantDashboard />;
             if (activeTab === "wallets") return <WalletManager />;
             if (activeTab === "tokenMarket") return <TokenMarket />;
+            if (activeTab === "orders") return <OrdersList tenantId={currentTenant.id} />;
+            if (activeTab === "users") return <UsersList tenantId={currentTenant.id} />;
             if (activeTab.startsWith("token-")) {
               const tokenId = activeTab.replace("token-", "");
               return <TokenDetailView tokenId={tokenId} onBack={() => setActiveTab("overview")} />;

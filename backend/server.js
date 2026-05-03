@@ -19,9 +19,12 @@ const app = express();
 // Configure strict CORS for production
 const allowedOrigins = [
   'http://localhost:5173',
+  'http://localhost:5174',
   'http://localhost:3000',
   'https://blockchain-project-cbf20.web.app',
   'https://blockchain-project-cbf20.firebaseapp.com',
+  'https://portal-bc.web.app',
+  'https://portal-bc.firebaseapp.com',
   process.env.FRONTEND_URL
 ].filter(Boolean);
 
@@ -35,6 +38,10 @@ app.use(cors({
   },
   credentials: true
 }));
+// Special handling for Stripe Webhook (needs raw body)
+const paymentRoutes = require('./routes/payments');
+app.use('/api/payments/webhook', paymentRoutes); // Applying the specific file first
+
 app.use(express.json());
 
 // Quick deploy check: GET /api should list modules (use after redeploy to confirm tokens route is live)
@@ -55,6 +62,7 @@ app.use('/api/tenants', tenantRoutes);
 app.use('/api/users', userRoutes);
 app.use('/api/wallets', walletRoutes);
 app.use('/api/tokens', tokenRoutes);
+app.use('/api/payments', paymentRoutes);
 
 // Health checks — keep body tiny (cron/uptime monitors often cap response size ~8KB;
 // Render error HTML when cold/502 can exceed that and fail the job as "output too large").

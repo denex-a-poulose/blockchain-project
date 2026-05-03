@@ -41,6 +41,10 @@ export async function getTenantMembers(tenantId) {
   return await fetchWithAuth(`/tenants/${tenantId}/members`);
 }
 
+export async function getTenantInvestors(tenantId) {
+  return await fetchWithAuth(`/tenants/${tenantId}/investors`);
+}
+
 export async function inviteUserToTenant(tenantId, email, role = "member") {
   return await fetchWithAuth(`/tenants/${tenantId}/invite`, {
     method: "POST",
